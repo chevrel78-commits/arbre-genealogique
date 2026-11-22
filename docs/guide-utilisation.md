@@ -21,7 +21,7 @@ Tant que la demande n'est pas acceptée, la connexion affiche « Votre demande d
 1. Ouvrez l'adresse du site. Si vous n'êtes pas connecté, vous arrivez sur la page **« Se connecter »**,
    quelle que soit la page demandée.
 2. Saisissez votre **e-mail** et votre **mot de passe**, puis cliquez sur **« Se connecter »**.
-3. Vous arrivez sur l'accueil, qui montre les personnes de l'arbre. Votre nom s'affiche en haut à
+3. Vous arrivez sur l'accueil, qui montre l'arbre de la famille. Votre nom s'affiche en haut à
    droite (avec la mention « Administrateur » si vous l'êtes).
 
 Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous déconnectez.
@@ -34,12 +34,28 @@ Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous d
   protection contre ceux qui essaient de deviner les mots de passe. Patientez, puis réessayez.
 - « Votre demande d'accès est en attente » : un administrateur doit encore accepter votre compte.
 
+## Le dessin de l'arbre
+
+L'accueil affiche l'arbre **centré sur une personne** : la vôtre si une fiche porte votre prénom et
+votre nom, sinon la première fiche créée. Chaque génération a sa rangée, les parents au-dessus et les
+enfants en dessous. Les couples sont côte à côte, les frères et sœurs sur la même rangée.
+
+- **Ouvrir une fiche** : cliquez sur la tuile.
+- **Se déplacer dans la famille** : cliquez sur **« Centrer »** en bas d'une tuile. L'arbre montre
+  3 générations au-dessus et 3 en dessous de la personne centrale : recentrez pour aller plus loin.
+- **Trouver quelqu'un** : tapez son nom dans **« Chercher une personne »**, puis cliquez sur le résultat.
+- **Voir plus ou moins grand** : utilisez les boutons **−** et **+**, et faites défiler l'arbre.
+- **Depuis une fiche** : **« Voir dans l'arbre »** centre l'arbre sur cette personne.
+
+**Les traits** : un trait plein relie un couple marié et les parents à leurs enfants. Les pointillés
+indiquent un couple non marié, ou des frères et sœurs dont les parents sont inconnus.
+
 ## Les personnes de l'arbre
 
 Tous les membres peuvent ajouter et corriger des personnes. Chaque fiche indique qui l'a ajoutée et
 qui l'a modifiée en dernier.
 
-**Voir les personnes** : l'accueil les présente sous forme de **tuiles**, classées par nom puis par
+**Voir toutes les personnes** : sur l'accueil, cliquez sur **« Liste »**. Elles apparaissent en **tuiles**, classées par nom puis par
 prénom. Cliquez sur une tuile pour ouvrir la **fiche** de la personne. Pour revenir, cliquez sur
 **« Retour à l'arbre »**.
 
@@ -58,7 +74,7 @@ refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une 
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-Pour l'instant, les personnes apparaissent avec leurs initiales. Le dessin de l'arbre et les photos
+Pour l'instant, les personnes apparaissent avec leurs initiales. Les photos
 arriveront prochainement.
 
 ## Les liens de famille

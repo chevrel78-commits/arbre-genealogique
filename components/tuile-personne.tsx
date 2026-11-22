@@ -11,13 +11,13 @@ export type PersonneTuile = {
   anneeNaissance: number | null;
 };
 
-export function Portrait({ prenom, nom, grand = false }: { prenom: string; nom: string; grand?: boolean }) {
+export function Portrait({ prenom, nom, grand = false, petit = false }: { prenom: string; nom: string; grand?: boolean; petit?: boolean }) {
   const initiales = `${[...prenom][0] ?? ""}${[...nom][0] ?? ""}`.toUpperCase();
   return (
     <span
       aria-hidden="true"
       className={`flex shrink-0 items-center justify-center rounded-full bg-arbre-doux font-semibold text-arbre ${
-        grand ? "h-24 w-24 text-3xl" : "h-16 w-16 text-xl"
+        grand ? "h-24 w-24 text-3xl" : petit ? "h-10 w-10 text-sm" : "h-16 w-16 text-xl"
       }`}
     >
       {initiales}

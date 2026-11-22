@@ -126,9 +126,12 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div>
+        <div className="flex flex-wrap gap-2">
           <Link href={`/personnes/${p.id}/modifier`} className="inline-block rounded-lg bg-arbre px-4 py-2 font-medium text-white hover:opacity-90">
             Modifier
+          </Link>
+          <Link href={`/?centre=${p.id}`} prefetch={false} className="inline-block rounded-lg border border-arbre px-4 py-2 font-medium text-arbre hover:bg-arbre-doux">
+            Voir dans l&apos;arbre
           </Link>
         </div>
 
