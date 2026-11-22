@@ -79,16 +79,16 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - Hostinger **n'utilise pas `npm start`** : rien ne doit dépendre du script `start`.
 - **Déploiement automatique** : chaque push sur `main` reconstruit et republie le site.
 - Les variables d'environnement en ligne se règlent dans hPanel → site → variables d'environnement. L'outil Hostinger qui les modifie **remplace la liste entière** : toujours renvoyer la liste complète.
-- Site : **https://arbre.altea.website** (choix d'Eric du 2026-11-22), application Node.js de l'hébergement Hostinger (même compte que Palmares et Objectif) : **à créer**.
+- Site : **https://arbre.altea.website** (choix d'Eric du 2026-11-22), application Node.js de l'hébergement Hostinger (compte `u145882112`, comme Palmares et Objectif), créé le 2026-11-22, relié au dépôt GitHub (construction à chaque push sur `main`, Node.js 24). Variables en ligne : `DATABASE_URL` (base réelle, `127.0.0.1:3306`), `URL_SITE`, `STOCKAGE_MEDIAS` = `/home/u145882112/arbre-stockage/medias`.
 
 ## Environnement de développement local
 
 - Dossier du projet : `Documents\ArbreGenealogique` (à confirmer)
 - Outils (les mêmes que pour Palmares et Objectif) : Node.js, npm 11, Git, GitHub CLI connecté au compte `chevrel78-commits`.
 - **Trois bases MySQL Hostinger**, chacune avec son utilisateur du même nom, distinctes de celles de Palmares et d'Objectif (le quota de connexions n'est donc pas partagé) :
-  - base **réelle** (site en ligne, `127.0.0.1:3306` côté serveur). Ne jamais tester dessus ; Claude ne la lit ni ne la modifie.
-  - base de **développement** (`DATABASE_URL` dans `.env`) : c'est elle qui sert aux tests en local.
-  - base **shadow**, seulement pour `prisma migrate dev` (`SHADOW_DATABASE_URL`).
+  - `u145882112_arbre` = base **réelle** (site en ligne, `127.0.0.1:3306` côté serveur). Ne jamais tester dessus ; Claude ne la lit ni ne la modifie.
+  - `u145882112_arbreDev` (avec un **D majuscule**) = base de **développement** (`DATABASE_URL` dans `.env`) : c'est elle qui sert aux tests en local.
+  - `u145882112_arbreshadow` = base **shadow**, seulement pour `prisma migrate dev` (`SHADOW_DATABASE_URL`).
   - En développement : accès distant autorisé pour l'IPv4 publique du PC, connexion par l'IPv4 du serveur MySQL, comme pour Palmares et Objectif.
 - Copier `.env.example` en `.env` et le remplir. `.env` est exclu par `.gitignore` : ne jamais committer ce fichier.
 - npm 11 bloque les scripts d'installation : ceux de `prisma`, `@prisma/engines` et `esbuild` sont à autoriser dans `package.json` (`allowScripts`).
@@ -101,7 +101,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 ## État d'avancement
 
-- [ ] Étape 0 : socle : code prêt et vérifié (construction réussie, accueil « Base de données : non connectée » sans base) ; reste la partie Hostinger (bases, site Node.js, liaison GitHub, variables)
+- [x] Étape 0 : socle (2026-11-22) : site Hostinger `arbre.altea.website` relié à GitHub, trois bases créées, migration `init` appliquée pendant la construction
 
 ## Décisions
 
