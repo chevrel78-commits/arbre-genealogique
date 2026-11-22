@@ -59,6 +59,12 @@ export function selectionner(personnes: PersonneArbre[], familles: FamilleArbre[
     }
   };
 
+  // Un frère ou une sœur apparaît avec son ou ses conjoints, sur la même rangée.
+  const ajouterAvecConjoints = (id: number, g: number) => {
+    ajouter(id, g);
+    for (const u of unions.get(id) ?? []) for (const conjoint of parentsDe(u)) ajouter(conjoint, g);
+  };
+
   const vus = new Set<number>();
   const monter = (id: number, g: number) => {
     if (vus.has(id)) return;
@@ -66,14 +72,14 @@ export function selectionner(personnes: PersonneArbre[], familles: FamilleArbre[
     const origine = parId.get(id)?.familleOrigineId;
     const f = origine != null ? familleParId.get(origine) : undefined;
     if (!f) return;
-    for (const frere of enfants.get(f.id) ?? []) ajouter(frere, g);
+    for (const frere of enfants.get(f.id) ?? []) ajouterAvecConjoints(frere, g);
     if (g <= -portee) return;
     for (const parent of parentsDe(f)) {
       ajouter(parent, g - 1);
       // Les autres unions d'un parent : ses autres conjoints et les demi-frères ou demi-sœurs.
       for (const u of unions.get(parent) ?? []) {
         for (const conjoint of parentsDe(u)) ajouter(conjoint, g - 1);
-        for (const e of enfants.get(u.id) ?? []) ajouter(e, g);
+        for (const e of enfants.get(u.id) ?? []) ajouterAvecConjoints(e, g);
       }
       monter(parent, g - 1);
     }

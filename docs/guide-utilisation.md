@@ -38,7 +38,8 @@ Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous d
 
 L'accueil affiche l'arbre **centré sur une personne** : la vôtre si une fiche porte votre prénom et
 votre nom, sinon la première fiche créée. Chaque génération a sa rangée, les parents au-dessus et les
-enfants en dessous. Les couples sont côte à côte, les frères et sœurs sur la même rangée.
+enfants en dessous. Les couples sont côte à côte, les frères et sœurs sur la même rangée avec leurs
+conjoints. Pour voir leurs enfants (neveux, nièces, cousins), cliquez sur « Centrer » sous leur tuile.
 
 - **Ouvrir une fiche** : cliquez sur la tuile.
 - **Se déplacer dans la famille** : cliquez sur **« Centrer »** en bas d'une tuile. L'arbre montre
