@@ -9,7 +9,22 @@ import { lireValeurs, texteDe, validerPersonne, type EtatPersonne } from "@/lib/
 import { avecVerrou, ErreurLien, relier, retirerConjoint, retirerFrere, retirerParent, type OptionsLien } from "@/lib/liens";
 import { COOKIE_INFO_FICHE } from "@/lib/messages-fiche";
 import { estTypeLien, identifiantValide } from "@/lib/personnes";
+import { prisma } from "@/lib/prisma";
 import { supprimerPhoto } from "@/lib/stockage";
+
+// Statut d'un couple : marié, en couple ou divorcé. Les enfants gardent leurs deux parents.
+export async function changerStatutCouple(d: FormData) {
+  await exigerMembre();
+  const sourceId = identifiantValide(texteDe(d, "source"));
+  const familleId = identifiantValide(texteDe(d, "famille"));
+  const statut = texteDe(d, "statut");
+  if (sourceId === null || familleId === null || !["marie", "couple", "divorce"].includes(statut)) return;
+  await prisma.famille.updateMany({
+    where: { id: familleId, parent1Id: { not: null }, parent2Id: { not: null }, OR: [{ parent1Id: sourceId }, { parent2Id: sourceId }] },
+    data: { marie: statut !== "couple", divorce: statut === "divorce" },
+  });
+  revalidatePath("/", "layout");
+}
 
 function lireContexte(d: FormData) {
   const sourceId = identifiantValide(texteDe(d, "source"));

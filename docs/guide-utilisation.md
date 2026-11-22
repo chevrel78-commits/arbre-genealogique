@@ -47,10 +47,19 @@ conjoints. Les personnes qui ne sont pas encore reliées à la famille apparaiss
   tuile pour amener cette personne au milieu de l'écran.
 - **Trouver quelqu'un** : tapez son nom dans **« Chercher une personne »**, puis cliquez sur le résultat.
 - **Voir plus ou moins grand** : utilisez les boutons **−** et **+**, et faites défiler l'arbre.
+- **Replier une branche** : le petit bouton **−** en bas à droite d'une tuile cache ses descendants. Il
+  devient **+3** (le nombre de personnes cachées) : cliquez dessus pour les réafficher. **« Tout déplier »**
+  rouvre toutes les branches.
+- **Masquer la belle-famille** : ce bouton garde la famille de sang de la personne au centre et les
+  conjoints, et cache leurs parents, frères et sœurs. Recentrez sur quelqu'un pour voir sa propre famille.
+
+Replier ou masquer ne supprime rien et ne change rien pour les autres membres : ce réglage reste dans
+votre navigateur.
 - **Depuis une fiche** : **« Voir dans l'arbre »** centre l'arbre sur cette personne.
 
 **Les traits** : un trait plein relie un couple marié et les parents à leurs enfants. Les pointillés
-indiquent un couple non marié, ou des frères et sœurs dont les parents sont inconnus.
+indiquent un couple non marié, ou des frères et sœurs dont les parents sont inconnus. Deux petites
+barres sur le trait d'un couple indiquent un divorce.
 
 ## Les personnes de l'arbre
 
@@ -76,7 +85,7 @@ refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une 
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
+**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la avec le curseur **Zoom**, puis cliquez sur **« Valider »**. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
 Les photos ne sont visibles que par les membres connectés. Le lieu de prise de vue et les autres informations cachées dans le fichier sont supprimés à l'envoi. Sans photo, la personne apparaît avec ses initiales.
 
 ## Les liens de famille
@@ -96,7 +105,8 @@ La fiche d'une personne présente ses **parents**, ses **conjoints**, ses **frè
 **Bon à savoir**
 
 - **Conjoint** : une personne peut en avoir plusieurs (remariage). Décochez **« Mariés »** pour un
-  couple non marié.
+  couple non marié. Ensuite, la liste sous la tuile du conjoint permet à tout moment de choisir
+  **Mariés**, **En couple** ou **Divorcés**. Les enfants gardent leurs deux parents.
 - **Enfant** : si la personne a un conjoint, indiquez de quelle union l'enfant est issu. Les
   **demi-frères et demi-sœurs** apparaissent alors tout seuls.
 - **Frère ou sœur** : vous pouvez en ajouter même si les parents sont inconnus. Un parent ajouté plus

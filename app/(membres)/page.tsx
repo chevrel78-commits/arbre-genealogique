@@ -4,7 +4,7 @@ import { RechercheArbre } from "@/components/recherche-arbre";
 import { TuilePersonne } from "@/components/tuile-personne";
 import { VueArbre } from "@/components/vue-arbre";
 import { exigerMembre } from "@/lib/acces";
-import { centreParDefaut, disposer } from "@/lib/disposition-arbre";
+import { centreParDefaut } from "@/lib/disposition-arbre";
 import { identifiantValide } from "@/lib/personnes";
 import { prisma } from "@/lib/prisma";
 
@@ -33,7 +33,7 @@ async function Contenu({ recherche }: { recherche: Promise<Record<string, string
       orderBy: [{ nom: "asc" }, { prenom: "asc" }, { id: "asc" }],
       select: { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, photo: true, familleOrigineId: true },
     }),
-    prisma.famille.findMany({ select: { id: true, parent1Id: true, parent2Id: true, marie: true } }),
+    prisma.famille.findMany({ select: { id: true, parent1Id: true, parent2Id: true, marie: true, divorce: true } }),
     recherche,
   ]);
   const nombre = personnes.length;
@@ -91,7 +91,7 @@ async function Contenu({ recherche }: { recherche: Promise<Record<string, string
           ))}
         </div>
       ) : (
-        <VueArbre disposition={disposer(personnes, familles, centreId)} centreId={centreId} />
+        <VueArbre personnes={personnes} familles={familles} centreId={centreId} />
       )}
     </>
   );
