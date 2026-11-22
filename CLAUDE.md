@@ -84,7 +84,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 ## Environnement de développement local
 
-- Dossier du projet : `Documents\ArbreGenealogique` (à confirmer)
+- Dossier du projet sur le PC d'Eric (Windows) : `C:\Users\chevr\Documents\Arbre généalogique\ArbreGenealogique` (choix d'Eric du 2026-11-22)
 - Outils (les mêmes que pour Palmares et Objectif) : Node.js, npm 11, Git, GitHub CLI connecté au compte `chevrel78-commits`.
 - **Trois bases MySQL Hostinger**, chacune avec son utilisateur du même nom, distinctes de celles de Palmares et d'Objectif (le quota de connexions n'est donc pas partagé) :
   - `u145882112_arbre` = base **réelle** (site en ligne, `127.0.0.1:3306` côté serveur). Ne jamais tester dessus ; Claude ne la lit ni ne la modifie.
