@@ -7,7 +7,8 @@
     "build": "prisma migrate deploy && next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "creer-admin": "tsx scripts/creer-admin.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.1",
