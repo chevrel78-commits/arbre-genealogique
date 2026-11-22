@@ -267,8 +267,8 @@ export async function chargerProches(id: number) {
     where: { id },
     select: {
       familleOrigine: { select: { id: true, parent1: { select: champsTuile }, parent2: { select: champsTuile }, enfants: { select: champsTuile } } },
-      famillesParent1: { select: { id: true, marie: true, parent2: { select: champsTuile }, enfants: { select: champsTuile } } },
-      famillesParent2: { select: { id: true, marie: true, parent1: { select: champsTuile }, enfants: { select: champsTuile } } },
+      famillesParent1: { select: { id: true, marie: true, divorce: true, parent2: { select: champsTuile }, enfants: { select: champsTuile } } },
+      famillesParent2: { select: { id: true, marie: true, divorce: true, parent1: { select: champsTuile }, enfants: { select: champsTuile } } },
     },
   });
   if (!p) return null;
@@ -289,8 +289,8 @@ export async function chargerProches(id: number) {
   const demis = [...new Map(autres.flatMap((f) => f.enfants).filter((e) => e.id !== id).map((e) => [e.id, e])).values()].sort(parAge);
 
   const unions = [
-    ...p.famillesParent1.map((f) => ({ id: f.id, marie: f.marie, conjoint: f.parent2 as Tuile | null, enfants: f.enfants as Tuile[] })),
-    ...p.famillesParent2.map((f) => ({ id: f.id, marie: f.marie, conjoint: f.parent1 as Tuile | null, enfants: f.enfants as Tuile[] })),
+    ...p.famillesParent1.map((f) => ({ id: f.id, marie: f.marie, divorce: f.divorce, conjoint: f.parent2 as Tuile | null, enfants: f.enfants as Tuile[] })),
+    ...p.famillesParent2.map((f) => ({ id: f.id, marie: f.marie, divorce: f.divorce, conjoint: f.parent1 as Tuile | null, enfants: f.enfants as Tuile[] })),
   ];
   const enfants = unions
     .flatMap((u) => u.enfants.map((e) => ({ ...e, autreParent: u.conjoint })))

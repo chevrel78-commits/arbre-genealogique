@@ -19,9 +19,23 @@ const dossier = () => path.resolve(process.env.STOCKAGE_MEDIAS ?? "stockage/medi
 // Erreur « normale » : son message est affiché tel quel à l'utilisateur.
 export class PhotoInvalide extends Error {}
 
+// Zone carrée choisie dans la fenêtre de recadrage, en fractions de l'image : x et y depuis le coin haut
+// gauche, cote par rapport à la largeur.
+export type Recadrage = { x: number; y: number; cote: number };
+
+function zoneCarree({ x, y, cote }: Recadrage, largeur: number, hauteur: number) {
+  const taille = Math.max(1, Math.min(Math.round(cote * largeur), largeur, hauteur));
+  return {
+    left: Math.max(0, Math.min(Math.round(x * largeur), largeur - taille)),
+    top: Math.max(0, Math.min(Math.round(y * hauteur), hauteur - taille)),
+    width: taille,
+    height: taille,
+  };
+}
+
 // Vérifie l'image, puis crée une grande version et une vignette carrée. rotate() applique le sens de
 // l'appareil ; sharp ne recopie aucune métadonnée (lieu GPS, appareil, date) dans les images produites.
-export async function enregistrerPhoto(fichier: File): Promise<string> {
+export async function enregistrerPhoto(fichier: File, recadrage?: Recadrage): Promise<string> {
   if (fichier.size === 0) throw new PhotoInvalide("Choisissez une photo.");
   if (fichier.size > TAILLE_PHOTO_MAX) throw new PhotoInvalide("Cette photo est trop lourde (10 Mo au plus).");
   const entree = Buffer.from(await fichier.arrayBuffer());
@@ -29,11 +43,15 @@ export async function enregistrerPhoto(fichier: File): Promise<string> {
   let grande: Buffer;
   let vignette: Buffer;
   try {
-    const { format } = await sharp(entree).metadata();
+    const { format, width, height, orientation } = await sharp(entree).metadata();
     if (!format || !FORMATS_ACCEPTES.includes(format)) throw new PhotoInvalide("Format non accepté : envoyez une image JPEG, PNG ou WebP.");
+    // Le recadrage est exprimé sur l'image remise à l'endroit : les orientations 5 à 8 échangent largeur et hauteur.
+    const tournee = (orientation ?? 1) >= 5;
+    const zone = recadrage ? zoneCarree(recadrage, tournee ? height : width, tournee ? width : height) : null;
+    const image = () => (zone ? sharp(entree).rotate().extract(zone) : sharp(entree).rotate());
     [grande, vignette] = await Promise.all([
-      sharp(entree).rotate().resize({ width: COTE_GRANDE, height: COTE_GRANDE, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer(),
-      sharp(entree).rotate().resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover", position: sharp.strategy.attention }).webp({ quality: 80 }).toBuffer(),
+      image().resize({ width: COTE_GRANDE, height: COTE_GRANDE, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer(),
+      image().resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover", position: zone ? "centre" : sharp.strategy.attention }).webp({ quality: 80 }).toBuffer(),
     ]);
   } catch (e) {
     if (e instanceof PhotoInvalide) throw e;

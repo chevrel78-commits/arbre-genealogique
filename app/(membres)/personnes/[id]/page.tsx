@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { FormulairePhoto } from "../formulaire-photo";
 import { retirerLien, supprimerPersonne } from "../liens-actions";
+import { StatutCouple } from "../statut-couple";
 import { BoutonConfirme } from "@/components/bouton-confirme";
 import { Portrait, TuilePersonne, type PersonneTuile } from "@/components/tuile-personne";
 import { exigerMembre } from "@/lib/acces";
@@ -44,12 +45,14 @@ function Rubrique({ titre, boutons, vide, children }: { titre: string; boutons?:
 function Proche({
   personne,
   precision,
+  complement,
   sourceId,
   sourceNom,
   type,
 }: {
   personne: PersonneTuile;
   precision?: string;
+  complement?: ReactNode;
   sourceId: number;
   sourceNom: string;
   type?: "parent" | "enfant" | "conjoint" | "frere";
@@ -57,6 +60,7 @@ function Proche({
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <TuilePersonne personne={personne} />
+      {complement}
       {precision && <p className="text-center text-xs text-foreground/60">{precision}</p>}
       {type && (
         <form action={retirerLien} className="text-center">
@@ -164,7 +168,15 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
           <Proche
             key={u.id}
             personne={u.conjoint!}
-            precision={`${u.marie ? "Mariés" : "En couple"}${u.enfants.length > 0 ? ` · ${u.enfants.length} enfant${u.enfants.length > 1 ? "s" : ""}` : ""}`}
+            complement={
+              <StatutCouple
+                sourceId={id}
+                familleId={u.id}
+                statut={u.divorce ? "divorce" : u.marie ? "marie" : "couple"}
+                conjoint={nomDe(u.conjoint!)}
+              />
+            }
+            precision={u.enfants.length > 0 ? `${u.enfants.length} enfant${u.enfants.length > 1 ? "s" : ""}` : undefined}
             sourceId={id}
             sourceNom={sourceNom}
             type={u.enfants.length === 0 ? "conjoint" : undefined}

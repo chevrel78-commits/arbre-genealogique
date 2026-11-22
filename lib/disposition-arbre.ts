@@ -15,7 +15,7 @@ export type PersonneArbre = {
   photo: string | null;
   familleOrigineId: number | null;
 };
-export type FamilleArbre = { id: number; parent1Id: number | null; parent2Id: number | null; marie: boolean };
+export type FamilleArbre = { id: number; parent1Id: number | null; parent2Id: number | null; marie: boolean; divorce: boolean };
 
 export type NoeudArbre = { personne: PersonneArbre; x: number; y: number; generation: number };
 export type TraitArbre = { cle: string; d: string; pointille: boolean; decalage?: number };
@@ -28,6 +28,106 @@ const HAUTEUR_RANGEE = TUILE.hauteur + 92;
 const MARGE = 24;
 
 const parentsDe = (f: FamilleArbre) => [f.parent1Id, f.parent2Id].filter((x): x is number => x !== null);
+
+// Les deux petites barres obliques qui signalent un couple divorcé.
+const barresDivorce = (x: number, y: number) => `M${x - 5} ${y + 6}L${x - 1} ${y - 6}M${x + 1} ${y + 6}L${x + 5} ${y - 6}`;
+
+// ---------------------------------------------------------------------------------------------------
+// Ce que l'on affiche : branches repliées et belle-famille masquée (réglages propres à chaque navigateur)
+// ---------------------------------------------------------------------------------------------------
+
+export type ReglagesAffichage = { replies: number[]; sansBelleFamille: boolean };
+
+function indexer(personnes: PersonneArbre[], familles: FamilleArbre[]) {
+  const parId = new Map(personnes.map((p) => [p.id, p]));
+  const familleParId = new Map(familles.map((f) => [f.id, f]));
+  const enfants = new Map<number, number[]>();
+  for (const p of personnes)
+    if (p.familleOrigineId !== null) enfants.set(p.familleOrigineId, [...(enfants.get(p.familleOrigineId) ?? []), p.id]);
+  const unions = new Map<number, FamilleArbre[]>();
+  for (const f of familles) for (const x of parentsDe(f)) unions.set(x, [...(unions.get(x) ?? []), f]);
+  return { parId, familleParId, enfants, unions };
+}
+type Index = ReturnType<typeof indexer>;
+
+function descendants(id: number, { enfants, unions }: Index) {
+  const vus = new Set<number>();
+  const pile = [id];
+  while (pile.length > 0) {
+    for (const f of unions.get(pile.pop()!) ?? [])
+      for (const e of enfants.get(f.id) ?? []) {
+        if (vus.has(e)) continue;
+        vus.add(e);
+        pile.push(e);
+      }
+  }
+  vus.delete(id);
+  return vus;
+}
+
+// La famille de sang : les ancêtres, tous leurs descendants, et la fratrie même si les parents sont inconnus.
+function familleDeSang(centreId: number, index: Index) {
+  const sang = new Set([centreId]);
+  const famillesVues = new Set<number>();
+  const aVoir = [centreId];
+  while (aVoir.length > 0) {
+    const origine = index.parId.get(aVoir.pop()!)?.familleOrigineId;
+    const f = origine != null ? index.familleParId.get(origine) : undefined;
+    if (!f || famillesVues.has(f.id)) continue;
+    famillesVues.add(f.id);
+    for (const e of index.enfants.get(f.id) ?? []) sang.add(e);
+    for (const p of parentsDe(f)) {
+      sang.add(p);
+      aVoir.push(p);
+    }
+  }
+  for (const x of [...sang]) for (const d of descendants(x, index)) sang.add(d);
+  return sang;
+}
+
+export function calculerAffichage(personnes: PersonneArbre[], familles: FamilleArbre[], centreId: number, reglages: ReglagesAffichage) {
+  const index = indexer(personnes, familles);
+  const masques = new Set<number>();
+
+  if (reglages.sansBelleFamille) {
+    const sang = familleDeSang(centreId, index);
+    const gardes = new Set(sang);
+    for (const s of sang) for (const u of index.unions.get(s) ?? []) for (const c of parentsDe(u)) gardes.add(c);
+    for (const p of personnes) if (!gardes.has(p.id)) masques.add(p.id);
+  }
+
+  // Une branche qui contient la personne au centre reste ouverte : le centre est toujours visible.
+  const replies = new Set<number>();
+  const branches = new Set<number>();
+  for (const r of reglages.replies) {
+    if (!index.parId.has(r)) continue;
+    const d = descendants(r, index);
+    if (d.has(centreId)) continue;
+    replies.add(r);
+    for (const x of d) branches.add(x);
+  }
+  for (const x of branches) masques.add(x);
+
+  // Le conjoint d'un descendant replié disparaît aussi, sauf s'il reste relié à quelqu'un de visible.
+  const resteRelie = (c: number) => {
+    const origine = index.parId.get(c)?.familleOrigineId;
+    const f = origine != null ? index.familleParId.get(origine) : undefined;
+    if (f && [...parentsDe(f), ...(index.enfants.get(f.id) ?? [])].some((x) => x !== c && !masques.has(x))) return true;
+    return (index.unions.get(c) ?? []).some((u) =>
+      [...parentsDe(u), ...(index.enfants.get(u.id) ?? [])].some((x) => x !== c && !masques.has(x)),
+    );
+  };
+  for (const b of branches)
+    for (const u of index.unions.get(b) ?? [])
+      for (const c of parentsDe(u)) if (c !== centreId && !masques.has(c) && !resteRelie(c)) masques.add(c);
+
+  return {
+    visibles: personnes.filter((p) => !masques.has(p.id)),
+    replies,
+    nombreMasques: masques.size,
+    nombreDescendants: new Map(personnes.map((p) => [p.id, descendants(p.id, index).size])),
+  };
+}
 
 // ---------------------------------------------------------------------------------------------------
 // 1. La rangée de chaque personne
@@ -290,7 +390,8 @@ function disposerBloc(personnes: PersonneArbre[], famillesToutes: FamilleArbre[]
       const milieu = (CX(a) + CX(b)) / 2;
       if (Y(a) === Y(b) && voisinesDansGroupe(a, b)) {
         const y = Y(a) + TUILE.hauteur / 2;
-        traits.push({ cle: `couple-${f.id}`, d: `M${X(a) + TUILE.largeur} ${y}H${X(b)}`, pointille: !f.marie });
+        const barres = f.divorce ? barresDivorce(X(a) + TUILE.largeur + 7, y) : "";
+        traits.push({ cle: `couple-${f.id}`, d: `M${X(a) + TUILE.largeur} ${y}H${X(b)}${barres}`, pointille: !f.marie });
         sources.set(f.id, { x: milieu, y, bas: BAS(a) });
       } else {
         // Conjoints éloignés (remariage, ou rangées différentes) : le trait passe sous les tuiles.
@@ -298,7 +399,8 @@ function disposerBloc(personnes: PersonneArbre[], famillesToutes: FamilleArbre[]
         const niveau = niveauxCouples.get(bas) ?? 0;
         niveauxCouples.set(bas, niveau + 1);
         const y = bas + 8 + niveau * 6;
-        traits.push({ cle: `couple-${f.id}`, d: `M${CX(a)} ${BAS(a)}V${y}H${CX(b)}V${BAS(b)}`, pointille: !f.marie });
+        const barres = f.divorce ? barresDivorce(milieu - 16, y) : "";
+        traits.push({ cle: `couple-${f.id}`, d: `M${CX(a)} ${BAS(a)}V${y}H${CX(b)}V${BAS(b)}${barres}`, pointille: !f.marie });
         sources.set(f.id, { x: milieu, y, bas: y });
       }
     } else if (parents.length === 1) {

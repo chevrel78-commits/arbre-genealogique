@@ -142,6 +142,7 @@ model Famille {
   parent1Id Int?
   parent2Id Int?
   marie     Boolean  @default(true)
+  divorce   Boolean  @default(false) // couple marié puis divorcé ; les enfants gardent leurs deux parents
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
