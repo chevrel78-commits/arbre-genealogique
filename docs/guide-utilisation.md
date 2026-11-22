@@ -21,8 +21,8 @@ Tant que la demande n'est pas acceptée, la connexion affiche « Votre demande d
 1. Ouvrez l'adresse du site. Si vous n'êtes pas connecté, vous arrivez sur la page **« Se connecter »**,
    quelle que soit la page demandée.
 2. Saisissez votre **e-mail** et votre **mot de passe**, puis cliquez sur **« Se connecter »**.
-3. Vous arrivez sur l'accueil, qui vous souhaite la bienvenue. Votre nom s'affiche en haut à droite
-   (avec la mention « Administrateur » si vous l'êtes).
+3. Vous arrivez sur l'accueil, qui montre les personnes de l'arbre. Votre nom s'affiche en haut à
+   droite (avec la mention « Administrateur » si vous l'êtes).
 
 Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous déconnectez.
 
@@ -33,6 +33,33 @@ Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous d
 - « Trop d'essais » : après 5 mots de passe erronés, la connexion est bloquée **15 minutes**. C'est une
   protection contre ceux qui essaient de deviner les mots de passe. Patientez, puis réessayez.
 - « Votre demande d'accès est en attente » : un administrateur doit encore accepter votre compte.
+
+## Les personnes de l'arbre
+
+Tous les membres peuvent ajouter et corriger des personnes. Chaque fiche indique qui l'a ajoutée et
+qui l'a modifiée en dernier.
+
+**Voir les personnes** : l'accueil les présente sous forme de **tuiles**, classées par nom puis par
+prénom. Cliquez sur une tuile pour ouvrir la **fiche** de la personne. Pour revenir, cliquez sur
+**« Retour à l'arbre »**.
+
+**Ajouter une personne**
+
+1. Sur l'accueil, cliquez sur **« Ajouter une personne »**.
+2. Choisissez la **civilité** (M., Mme ou Mlle), puis indiquez le **prénom** et le **nom**.
+3. Si vous les connaissez, ajoutez le **nom de jeune fille**, la **date de naissance** et le **lieu
+   de naissance** (par exemple « Lyon (Rhône) »).
+4. Cliquez sur **« Enregistrer »** : la fiche de la personne s'affiche.
+
+**Si la date est incomplète** : indiquez seulement ce que vous savez, l'**année** seule ou le **mois
+et l'année**. N'inventez pas de jour : la fiche affichera par exemple « Née en mars 1950 ». Le site
+refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une date future.
+
+**Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
+cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
+
+Pour l'instant, les personnes apparaissent avec leurs initiales et ne sont pas encore reliées entre
+elles. Les liens de famille, le dessin de l'arbre et les photos arriveront prochainement.
 
 ## Se déconnecter
 

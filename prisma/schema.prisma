@@ -73,6 +73,9 @@ model Membre {
   sessions  SessionMembre[]
   jetons    JetonEmail[]
 
+  personnesCreees    Personne[] @relation("PersonneCreeePar")
+  personnesModifiees Personne[] @relation("PersonneModifieePar")
+
   @@index([statut])
 }
 
@@ -89,6 +92,65 @@ model SessionMembre {
 
   @@index([membreId])
   @@index([expireLe])
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Étape 3 : les personnes de l'arbre et les familles (un couple et ses enfants).
+// ---------------------------------------------------------------------------------------------------
+
+enum Civilite {
+  M
+  MME
+  MLLE
+}
+
+// Une personne de l'arbre (ce n'est pas un compte d'accès au site).
+// Supprimer un compte membre n'efface jamais une personne : seule la mention « créée par » disparaît.
+model Personne {
+  id               Int      @id @default(autoincrement())
+  civilite         Civilite
+  prenom           String   @db.VarChar(100)
+  nom              String   @db.VarChar(100)
+  nomJeuneFille    String?  @db.VarChar(100)
+  // Date de naissance partielle : on connaît souvent seulement l'année d'un ancêtre, parfois le mois.
+  jourNaissance    Int?     @db.TinyInt
+  moisNaissance    Int?     @db.TinyInt
+  anneeNaissance   Int?     @db.SmallInt
+  lieuNaissance    String?  @db.VarChar(150)
+  photo            String?  @db.VarChar(255) // utilisée à l'étape 6
+  familleOrigineId Int? // la famille dont elle est l'enfant
+  creeParId        Int?
+  modifieParId     Int?
+  creeLe           DateTime @default(now())
+  modifieLe        DateTime @updatedAt
+
+  familleOrigine  Famille?  @relation("EnfantsDeLaFamille", fields: [familleOrigineId], references: [id], onDelete: SetNull)
+  famillesParent1 Famille[] @relation("Parent1")
+  famillesParent2 Famille[] @relation("Parent2")
+  creePar         Membre?   @relation("PersonneCreeePar", fields: [creeParId], references: [id], onDelete: SetNull)
+  modifiePar      Membre?   @relation("PersonneModifieePar", fields: [modifieParId], references: [id], onDelete: SetNull)
+
+  @@index([nom, prenom])
+  @@index([familleOrigineId])
+  @@index([creeParId])
+  @@index([modifieParId])
+}
+
+// Un couple et ses enfants, comme dans les logiciels de généalogie. L'un des parents peut être inconnu.
+model Famille {
+  id        Int      @id @default(autoincrement())
+  parent1Id Int?
+  parent2Id Int?
+  marie     Boolean  @default(true)
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  parent1 Personne?  @relation("Parent1", fields: [parent1Id], references: [id], onDelete: SetNull)
+  parent2 Personne?  @relation("Parent2", fields: [parent2Id], references: [id], onDelete: SetNull)
+  enfants Personne[] @relation("EnfantsDeLaFamille")
+
+  @@index([parent1Id])
+  @@index([parent2Id])
 }
 
 // ---------------------------------------------------------------------------------------------------
