@@ -1,6 +1,6 @@
 // Calcul du dessin de l'arbre, sans base de données ni affichage : on donne des personnes et des familles,
 // on reçoit la position de chaque tuile et le tracé de chaque trait. Trois temps :
-// 1. choisir qui montrer autour de la personne centrale (3 générations au-dessus, 3 en dessous) ;
+// 1. donner à chaque personne sa génération, sans exception ;
 // 2. ranger chaque génération sur sa rangée, les couples côte à côte, près de leurs parents et enfants ;
 // 3. tracer les traits entre couples, parents et enfants.
 import type { CodeCivilite } from "./personnes";
@@ -18,7 +18,7 @@ export type PersonneArbre = {
 export type FamilleArbre = { id: number; parent1Id: number | null; parent2Id: number | null; marie: boolean };
 
 export type NoeudArbre = { personne: PersonneArbre; x: number; y: number; generation: number };
-export type TraitArbre = { cle: string; d: string; pointille: boolean };
+export type TraitArbre = { cle: string; d: string; pointille: boolean; decalage?: number };
 export type DispositionArbre = { largeur: number; hauteur: number; noeuds: NoeudArbre[]; traits: TraitArbre[] };
 
 export const TUILE = { largeur: 136, hauteur: 140 };
@@ -26,69 +26,70 @@ const ECART_COUPLE = 28;
 const ECART_GROUPES = 24;
 const HAUTEUR_RANGEE = TUILE.hauteur + 92;
 const MARGE = 24;
-export const PORTEE = 3;
 
 const parentsDe = (f: FamilleArbre) => [f.parent1Id, f.parent2Id].filter((x): x is number => x !== null);
 
 // ---------------------------------------------------------------------------------------------------
-// 1. Qui montrer, et sur quelle rangée
+// 1. La rangée de chaque personne
 // ---------------------------------------------------------------------------------------------------
 
-export function selectionner(personnes: PersonneArbre[], familles: FamilleArbre[], centreId: number, portee = PORTEE) {
-  const parId = new Map(personnes.map((p) => [p.id, p]));
-  const familleParId = new Map(familles.map((f) => [f.id, f]));
+// Tout le monde est dessiné. Les personnes reliées entre elles forment un bloc ; celles qui ne sont pas
+// encore reliées au reste forment des blocs à part, placés à droite. Le résultat ne dépend pas de la
+// personne centrale : recentrer déplace seulement la vue, jamais les tuiles.
+export function calculerGenerations(personnes: PersonneArbre[], familles: FamilleArbre[]) {
+  const ids = new Set(personnes.map((p) => p.id));
   const enfants = new Map<number, number[]>();
   for (const p of personnes)
     if (p.familleOrigineId !== null) enfants.set(p.familleOrigineId, [...(enfants.get(p.familleOrigineId) ?? []), p.id]);
-  const unions = new Map<number, FamilleArbre[]>();
-  for (const f of familles) for (const x of parentsDe(f)) unions.set(x, [...(unions.get(x) ?? []), f]);
 
-  // Une personne garde la première rangée trouvée : elle n'est dessinée qu'une fois.
+  // Chaque lien indique l'écart de rangée : 0 pour un conjoint ou un frère, 1 d'un parent à son enfant.
+  const voisins = new Map<number, [number, number][]>([...ids].map((id) => [id, []]));
+  const relier = (a: number, b: number, ecart: number) => {
+    voisins.get(a)!.push([b, ecart]);
+    voisins.get(b)!.push([a, -ecart]);
+  };
+  const parentsPresents = (f: FamilleArbre) => parentsDe(f).filter((x) => ids.has(x));
+  for (const f of familles) {
+    const parents = parentsPresents(f);
+    const fratrie = enfants.get(f.id) ?? [];
+    if (parents.length === 2) relier(parents[0], parents[1], 0);
+    for (const p of parents) for (const e of fratrie) relier(p, e, 1);
+    for (const e of fratrie.slice(1)) relier(fratrie[0], e, 0);
+  }
+
   const generation = new Map<number, number>();
-  const ajouter = (id: number, g: number) => {
-    if (!parId.has(id) || generation.has(id)) return false;
-    generation.set(id, g);
-    return true;
-  };
-
-  const descendre = (id: number, g: number) => {
-    for (const f of unions.get(id) ?? []) {
-      for (const conjoint of parentsDe(f)) if (conjoint !== id) ajouter(conjoint, g);
-      if (g >= portee) continue;
-      for (const e of enfants.get(f.id) ?? []) if (ajouter(e, g + 1)) descendre(e, g + 1);
-    }
-  };
-
-  // Un frère ou une sœur apparaît avec son ou ses conjoints, sur la même rangée.
-  const ajouterAvecConjoints = (id: number, g: number) => {
-    ajouter(id, g);
-    for (const u of unions.get(id) ?? []) for (const conjoint of parentsDe(u)) ajouter(conjoint, g);
-  };
-
-  const vus = new Set<number>();
-  const monter = (id: number, g: number) => {
-    if (vus.has(id)) return;
-    vus.add(id);
-    const origine = parId.get(id)?.familleOrigineId;
-    const f = origine != null ? familleParId.get(origine) : undefined;
-    if (!f) return;
-    for (const frere of enfants.get(f.id) ?? []) ajouterAvecConjoints(frere, g);
-    if (g <= -portee) return;
-    for (const parent of parentsDe(f)) {
-      ajouter(parent, g - 1);
-      // Les autres unions d'un parent : ses autres conjoints et les demi-frères ou demi-sœurs.
-      for (const u of unions.get(parent) ?? []) {
-        for (const conjoint of parentsDe(u)) ajouter(conjoint, g - 1);
-        for (const e of enfants.get(u.id) ?? []) ajouterAvecConjoints(e, g);
+  const blocs: number[][] = [];
+  for (const depart of [...ids].sort((a, b) => a - b)) {
+    if (generation.has(depart)) continue;
+    generation.set(depart, 0);
+    const bloc = [depart];
+    for (let i = 0; i < bloc.length; i++)
+      for (const [v, ecart] of voisins.get(bloc[i])!) {
+        if (generation.has(v)) continue;
+        generation.set(v, generation.get(bloc[i])! + ecart);
+        bloc.push(v);
       }
-      monter(parent, g - 1);
-    }
-  };
+    blocs.push(bloc);
+  }
 
-  ajouter(centreId, 0);
-  descendre(centreId, 0);
-  monter(centreId, 0);
-  return generation;
+  // Un enfant est toujours sous ses parents, même après un mariage entre générations différentes.
+  for (let tour = 0; tour <= personnes.length; tour++) {
+    let change = false;
+    for (const f of familles) {
+      const parents = parentsPresents(f);
+      if (parents.length === 0) continue;
+      const minimum = Math.max(...parents.map((p) => generation.get(p)!)) + 1;
+      for (const e of enfants.get(f.id) ?? [])
+        if (generation.get(e)! < minimum) {
+          generation.set(e, minimum);
+          change = true;
+        }
+    }
+    if (!change) break;
+  }
+
+  blocs.sort((a, b) => b.length - a.length || Math.min(...a) - Math.min(...b));
+  return { generation, blocs };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -171,10 +172,33 @@ function placer(groupes: Groupe[], souhaits: number[]) {
 // Le dessin complet
 // ---------------------------------------------------------------------------------------------------
 
-export function disposer(personnes: PersonneArbre[], famillesToutes: FamilleArbre[], centreId: number): DispositionArbre {
+export function disposer(personnes: PersonneArbre[], familles: FamilleArbre[], centreId: number): DispositionArbre {
+  if (!personnes.some((p) => p.id === centreId)) return { largeur: 0, hauteur: 0, noeuds: [], traits: [] };
+  const { generation, blocs } = calculerGenerations(personnes, familles);
   const parId = new Map(personnes.map((p) => [p.id, p]));
-  if (!parId.has(centreId)) return { largeur: 0, hauteur: 0, noeuds: [], traits: [] };
-  const generation = selectionner(personnes, famillesToutes, centreId);
+
+  // Chaque bloc est dessiné seul, puis placé à droite du précédent.
+  const noeuds: NoeudArbre[] = [];
+  const traits: TraitArbre[] = [];
+  let decalage = 0;
+  let hauteur = 0;
+  for (const bloc of blocs) {
+    const membres = new Set(bloc);
+    const dessin = disposerBloc(
+      bloc.map((id) => parId.get(id)!),
+      familles.filter((f) => parentsDe(f).some((x) => membres.has(x)) || bloc.some((id) => parId.get(id)!.familleOrigineId === f.id)),
+      new Map(bloc.map((id) => [id, generation.get(id)!])),
+    );
+    noeuds.push(...dessin.noeuds.map((n) => ({ ...n, x: n.x + decalage })));
+    traits.push(...dessin.traits.map((t) => ({ ...t, decalage })));
+    decalage += dessin.largeur;
+    hauteur = Math.max(hauteur, dessin.hauteur);
+  }
+  return { largeur: decalage, hauteur, noeuds, traits };
+}
+
+function disposerBloc(personnes: PersonneArbre[], famillesToutes: FamilleArbre[], generation: Map<number, number>): DispositionArbre {
+  const parId = new Map(personnes.map((p) => [p.id, p]));
   const visible = (id: number | null): id is number => id !== null && generation.has(id);
 
   const enfantsVisibles = new Map<number, number[]>();
@@ -310,7 +334,7 @@ export function disposer(personnes: PersonneArbre[], famillesToutes: FamilleArbr
     while (pris.some(([n, a, b]) => n === niveau && debut <= b + 6 && fin >= a - 6)) niveau++;
     pris.push([niveau, debut, fin]);
     occupes.set(base, pris);
-    const rail = base + 22 + (niveau % 6) * 8;
+    const rail = base + 20 + (niveau % 9) * 7;
     traits.push({
       cle: `enfants-${f.id}`,
       d: `M${source.x} ${source.y}V${rail}M${debut} ${rail}H${fin}${enfants.map((e) => `M${CX(e)} ${rail}V${Y(e)}`).join("")}`,

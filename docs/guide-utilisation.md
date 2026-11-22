@@ -36,14 +36,15 @@ Vous restez connecté pendant **30 jours** sur cet appareil, sauf si vous vous d
 
 ## Le dessin de l'arbre
 
-L'accueil affiche l'arbre **centré sur une personne** : la vôtre si une fiche porte votre prénom et
+L'accueil affiche **toutes les personnes** de l'arbre, sans exception. La vue s'ouvre sur votre fiche si elle porte votre prénom et
 votre nom, sinon la première fiche créée. Chaque génération a sa rangée, les parents au-dessus et les
 enfants en dessous. Les couples sont côte à côte, les frères et sœurs sur la même rangée avec leurs
-conjoints. Pour voir leurs enfants (neveux, nièces, cousins), cliquez sur « Centrer » sous leur tuile.
+conjoints. Les personnes qui ne sont pas encore reliées à la famille apparaissent à droite.
 
 - **Ouvrir une fiche** : cliquez sur la tuile.
-- **Se déplacer dans la famille** : cliquez sur **« Centrer »** en bas d'une tuile. L'arbre montre
-  3 générations au-dessus et 3 en dessous de la personne centrale : recentrez pour aller plus loin.
+- **Voir tout l'arbre d'un coup** : cliquez sur **« Tout voir »**.
+- **Se déplacer dans la famille** : faites défiler l'arbre, ou cliquez sur **« Centrer »** en bas d'une
+  tuile pour amener cette personne au milieu de l'écran.
 - **Trouver quelqu'un** : tapez son nom dans **« Chercher une personne »**, puis cliquez sur le résultat.
 - **Voir plus ou moins grand** : utilisez les boutons **−** et **+**, et faites défiler l'arbre.
 - **Depuis une fiche** : **« Voir dans l'arbre »** centre l'arbre sur cette personne.

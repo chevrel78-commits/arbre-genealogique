@@ -7,7 +7,7 @@ import { Portrait } from "@/components/tuile-personne";
 import { TUILE, type DispositionArbre, type NoeudArbre } from "@/lib/disposition-arbre";
 import { CIVILITES } from "@/lib/personnes";
 
-const ZOOM_MIN = 0.5;
+const ZOOM_MIN = 0.15;
 const ZOOM_MAX = 1.25;
 const PAS_ZOOM = 0.25;
 
@@ -73,6 +73,18 @@ export function VueArbre({ disposition, centreId }: { disposition: DispositionAr
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            const zone = conteneur.current;
+            if (!zone) return;
+            const tout = Math.min(1, (zone.clientWidth - 8) / largeur, (zone.clientHeight - 8) / hauteur);
+            setZoom(Math.max(ZOOM_MIN, Math.floor(tout * 100) / 100));
+          }}
+          className="h-8 rounded-lg border border-arbre bg-white px-3 text-sm font-medium text-arbre hover:bg-arbre-doux"
+        >
+          Tout voir
+        </button>
         <button type="button" aria-label="Réduire l'arbre" disabled={zoom <= ZOOM_MIN} onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - PAS_ZOOM))} className={boutonZoom}>
           −
         </button>
@@ -89,7 +101,14 @@ export function VueArbre({ disposition, centreId }: { disposition: DispositionAr
           <div className="absolute left-0 top-0 origin-top-left" style={{ width: largeur, height: hauteur, transform: `scale(${zoom})` }}>
             <svg width={largeur} height={hauteur} className="absolute left-0 top-0 text-arbre/60" fill="none" aria-hidden="true">
               {traits.map((t) => (
-                <path key={t.cle} d={t.d} stroke="currentColor" strokeWidth={1.5} strokeDasharray={t.pointille ? "5 4" : undefined} />
+                <path
+                  key={t.cle}
+                  d={t.d}
+                  transform={t.decalage ? `translate(${t.decalage} 0)` : undefined}
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeDasharray={t.pointille ? "5 4" : undefined}
+                />
               ))}
             </svg>
             {noeuds.map((n) => (
