@@ -1,30 +1,63 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { TuilePersonne } from "@/components/tuile-personne";
 import { exigerMembre } from "@/lib/acces";
+import { prisma } from "@/lib/prisma";
 
-// Accueil des membres (provisoire). L'arbre lui-même arrivera aux étapes 3 à 5.
+// Accueil des membres : les personnes de l'arbre, sous forme de tuiles. Le dessin de l'arbre arrivera à l'étape 5.
 
-async function Bienvenue() {
+const boutonAjouter = "rounded-lg bg-arbre px-4 py-2 text-center font-medium text-white hover:opacity-90";
+
+async function Contenu() {
   // Protection : sans session valide (ou compte non accepté), renvoi vers /connexion.
   const membre = await exigerMembre();
+  const personnes = await prisma.personne.findMany({
+    orderBy: [{ nom: "asc" }, { prenom: "asc" }, { id: "asc" }],
+    select: { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true },
+  });
+  const nombre = personnes.length;
+
   return (
     <>
-      <h1 className="text-3xl font-semibold sm:text-4xl">Bonjour {membre.prenom}</h1>
-      <p className="max-w-md text-foreground/70">
-        Vous êtes connecté à l&apos;arbre généalogique de la famille. L&apos;arbre lui-même est en construction.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold sm:text-3xl">Bonjour {membre.prenom}</h1>
+          <p className="text-foreground/70">
+            {nombre === 0
+              ? "Bienvenue sur l'arbre généalogique de la famille."
+              : `L'arbre compte ${nombre} personne${nombre > 1 ? "s" : ""}.`}
+          </p>
+        </div>
+        {nombre > 0 && (
+          <Link href="/personnes/nouvelle" className={boutonAjouter}>
+            Ajouter une personne
+          </Link>
+        )}
+      </div>
+
+      {nombre === 0 ? (
+        <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
+          <p className="max-w-sm text-foreground/70">L&apos;arbre est encore vide. Commencez par ajouter une première personne.</p>
+          <Link href="/personnes/nouvelle" className={boutonAjouter}>
+            Ajouter une personne
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {personnes.map((p) => (
+            <TuilePersonne key={p.id} personne={p} />
+          ))}
+        </div>
+      )}
     </>
   );
 }
 
 export default function Accueil() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-      <svg viewBox="0 0 64 64" className="h-20 w-20 text-arbre" aria-hidden="true">
-        <circle cx="32" cy="24" r="18" fill="currentColor" opacity="0.85" />
-        <rect x="29" y="34" width="6" height="22" rx="2" fill="#6b4a2b" />
-      </svg>
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
       <Suspense fallback={<p className="text-sm text-foreground/50">Chargement…</p>}>
-        <Bienvenue />
+        <Contenu />
       </Suspense>
     </main>
   );

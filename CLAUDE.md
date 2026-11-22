@@ -8,7 +8,7 @@ Un site où une famille construit **ensemble** son **arbre généalogique**, en 
 
 **Les personnes de l'arbre** (demandes d'Eric, 2026-11-22)
 
-- Chaque personne a : **civilité** (M., Mme, Mlle), **prénom**, **nom**, **nom de jeune fille** (facultatif), **année de naissance** (facultative), **photo** (facultative).
+- Chaque personne a : **civilité** (M., Mme, Mlle), **prénom**, **nom**, **nom de jeune fille** (facultatif), **date de naissance** (facultative, complète ou partielle : année seule, ou mois et année), **lieu de naissance** (facultatif), **photo** (facultative).
 - Chaque personne est représentée par une **tuile cliquable** (photo, civilité, prénom, nom). Un clic ouvre sa fiche.
 - Depuis la fiche d'une personne, on ajoute en un clic : un **père** ou une **mère**, un **frère** ou une **sœur**, un **enfant**, un **conjoint**.
 - Dans l'arbre, les **époux sont côte à côte**, les **frères et sœurs sur la même rangée**, et chaque génération occupe sa propre rangée (parents au-dessus, enfants en dessous).
@@ -20,7 +20,7 @@ Un site où une famille construit **ensemble** son **arbre généalogique**, en 
 - **Administrateurs** : ils voient les demandes, les **acceptent** ou les **refusent**. Le demandeur est prévenu par e-mail.
 - Le premier administrateur (super-administrateur, Eric) est créé par une commande dans le terminal, comme pour Palmares et Objectif.
 
-**Plus tard, à décider** : sources et documents (scans d'actes), dates complètes (jour, mois, lieu), import / export GEDCOM (le format d'échange des logiciels de généalogie), plusieurs arbres sur le même site (un par famille, version SaaS « multi-familles »).
+**Plus tard, à décider** : sources et documents (scans d'actes), date et lieu de décès, import / export GEDCOM (le format d'échange des logiciels de généalogie), plusieurs arbres sur le même site (un par famille, version SaaS « multi-familles »).
 
 ## Stack imposée (la même que Palmares et Objectif)
 
@@ -53,7 +53,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 - `Membre` : compte d'accès au site (ce n'est pas une personne de l'arbre) : `prenom`, `nom`, e-mail unique, `motDePasseHash`, `statut` (`EN_ATTENTE` / `ACCEPTE` / `REFUSE` / `DESACTIVE`), `messageDemande`, `admin`, `superAdmin`, `valideParId`, `valideLe`.
 - `SessionMembre`, `JetonEmail` (mot de passe oublié), `TentativeConnexion`, `JournalEmail` : repris d'Objectif (en place).
-- `Personne` : `civilite` (`M` / `MME` / `MLLE`), `prenom`, `nom`, `nomJeuneFille`, `anneeNaissance` (entier, facultatif), `photo`, `creeParId`, `modifieParId`.
+- `Personne` : `civilite` (`M` / `MME` / `MLLE`), `prenom`, `nom`, `nomJeuneFille`, `jourNaissance`, `moisNaissance`, `anneeNaissance` (entiers facultatifs), `lieuNaissance`, `photo`, `creeParId`, `modifieParId`.
 - `Famille` : un **couple et ses enfants**, sur le modèle des logiciels de généalogie (et du format GEDCOM) : `parent1Id`, `parent2Id` (l'un ou l'autre peut manquer), `marie` (vrai par défaut).
 - `Personne.familleOrigineId` : la famille dont la personne est l'enfant.
 
@@ -97,14 +97,17 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 ## Questions ouvertes
 
 - Un seul arbre (celui de la famille) ou plusieurs familles sur le même site (version SaaS) ? Pour l'instant : un seul arbre, sans fermer la porte au reste.
-- Les membres acceptés peuvent-ils tous modifier l'arbre, ou certains seulement le consulter ?
-- Bibliothèque pour dessiner l'arbre : à proposer le moment venu (un dessin fait maison en CSS est possible).
+- Supprimer une personne : à traiter à l'étape 4, avec confirmation, car cela touche aux liens de famille.
 
 ## État d'avancement
 
 - [x] Étape 0 : socle (2026-11-22) : site Hostinger `arbre.altea.website` relié à GitHub, trois bases créées, migration `init` appliquée pendant la construction
 - [x] Étape 1 : connexion (2026-11-22) : tables `Membre` et `SessionMembre` (migration `connexion`), page `/connexion`, bouton « Se déconnecter », tout le site protégé (`proxy.ts` + `exigerMembre()`), blocage 15 min après 5 essais ratés, commande `npm run creer-admin`
 - [x] Étape 2 : demandes d'accès (2026-11-22) : pages publiques `/demande-acces`, `/mot-de-passe-oublie`, `/nouveau-mot-de-passe` ; page `/admin` (accepter / refuser, désactiver / réactiver, nommer administrateur) ; e-mails aux demandeurs et aux administrateurs ; table `JetonEmail` (migration `demandes_acces`)
+- [x] Étape 3 : personnes (2026-11-22) : tables `Personne` et `Famille` (migrations `personnes` et `date_lieu_naissance`, `Famille` encore vide), date partielle et lieu de naissance, tuiles sur l'accueil, pages `/personnes/nouvelle`, `/personnes/[id]` et `/personnes/[id]/modifier`
+- [ ] Étape 4 : liens de famille depuis la fiche (parent, frère ou sœur, enfant, conjoint) et suppression d'une personne avec confirmation
+- [ ] Étape 5 : dessin de l'arbre fait maison (une rangée par génération, époux côte à côte, traits de filiation)
+- [ ] Étape 6 : photos (envoi, redimensionnement avec `sharp`, affichage sur les tuiles)
 
 ## Décisions
 
@@ -117,3 +120,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - 2026-11-22 : **mot de passe oublié** : lien à usage unique valable 1 heure (`lib/jetons.ts`, la base ne garde que l'empreinte SHA-256 du jeton) ; le nouveau mot de passe ferme toutes les sessions du membre puis le connecte. Textes des e-mails dans `lib/emails-membres.ts` ; un e-mail qui ne part pas ne bloque jamais l'action (échec noté dans `JournalEmail`).
 - 2026-11-22 : **expéditeur des e-mails** : la boîte existante `noreply@altea.website` (offre mail Hostinger d'Eric), via `smtp.hostinger.com:465`. Sans `SMTP_HOTE` (développement), le texte des e-mails s'affiche dans le terminal de `npm run dev`.
 - 2026-11-22 : après une action d'administration, le message de confirmation passe par un cookie de 10 secondes (`arbre_admin_info`) et `revalidatePath("/", "layout")` recalcule aussi le bandeau (compteur de demandes en attente) en même temps que la page.
+- 2026-11-22 : **tous les membres acceptés peuvent modifier l'arbre** (choix d'Eric) ; la base garde qui a créé et modifié chaque fiche. Un rôle « lecture seule » pourra être ajouté plus tard.
+- 2026-11-22 : **personnes** : supprimer un compte membre n'efface jamais une personne (`creeParId` et `modifieParId` passent à vide) ; tuiles classées par nom puis prénom (elles n'affichent que l'année) ; initiales à la place de la photo jusqu'à l'étape 6. Dans les formulaires avec `useActionState`, garder `defaultValue` / `defaultChecked` : React remet le formulaire à ces valeurs après l'envoi (un bouton radio contrôlé par `useState` se décoche), et donner au `<select>` une `key` égale à sa valeur, sinon il se vide après une erreur.
+- 2026-11-22 : **date de naissance partielle** (choix d'Eric) : trois colonnes `jourNaissance`, `moisNaissance`, `anneeNaissance` plutôt qu'un champ date, pour ne jamais inventer un jour ou un mois inconnu. Pas de jour sans mois, pas de mois sans année, année à partir de 1000, ni date impossible ni date future (`erreurDateNaissance`, `lib/personnes.ts`). Avant 1583, une année sur quatre est bissextile (calendrier julien). Lieu de naissance en texte libre (150 caractères).
+- 2026-11-22 : **dessin de l'arbre fait maison**, sans nouvelle bibliothèque (plan validé par Eric).
