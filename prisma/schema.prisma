@@ -71,6 +71,7 @@ model Membre {
   validePar Membre?         @relation("Validation", fields: [valideParId], references: [id], onDelete: SetNull)
   valides   Membre[]        @relation("Validation")
   sessions  SessionMembre[]
+  jetons    JetonEmail[]
 
   @@index([statut])
 }
@@ -83,6 +84,31 @@ model SessionMembre {
   membreId  Int
   expireLe  DateTime
   creeLe    DateTime @default(now())
+
+  membre Membre @relation(fields: [membreId], references: [id], onDelete: Cascade)
+
+  @@index([membreId])
+  @@index([expireLe])
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Étape 2 : liens envoyés par e-mail (mot de passe oublié).
+// ---------------------------------------------------------------------------------------------------
+
+enum TypeJeton {
+  MOT_DE_PASSE // lien « choisir un nouveau mot de passe »
+}
+
+// Lien à usage unique envoyé par e-mail. Comme pour les sessions, la base ne garde que l'empreinte
+// (SHA-256) du jeton : celui qui lirait la base ne pourrait pas s'en servir.
+model JetonEmail {
+  id        Int       @id @default(autoincrement())
+  jetonHash String    @unique @db.Char(64)
+  type      TypeJeton
+  membreId  Int
+  expireLe  DateTime
+  utiliseLe DateTime? // rempli dès que le lien a servi : il ne marche plus ensuite
+  creeLe    DateTime  @default(now())
 
   membre Membre @relation(fields: [membreId], references: [id], onDelete: Cascade)
 
