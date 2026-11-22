@@ -38,33 +38,22 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 1. **Toujours répondre en français, sans exception** : messages à l'utilisateur, messages de commit, commentaires du code et explications.
 2. **Proposer un plan avant tout changement important** : nouvelle fonctionnalité, modification du schéma Prisma, refonte, ajout d'une dépendance. Attendre la validation avant de coder.
-3. **Chaque étape se termine par une vérification visible dans le navigateur**, en local : lancer l'application, montrer la page concernée et décrire ce que l'utilisateur doit voir.
+3. **Chaque étape du plan (présenté et validé dans la conversation) se termine par une vérification visible dans le navigateur**, en local : lancer l'application, montrer la page concernée et décrire ce que l'utilisateur doit voir.
 4. **Après chaque étape validée, mettre à jour ce CLAUDE.md**, en particulier les sections « État d'avancement » et « Décisions ».
 5. **Sauvegarder sur GitHub, seulement avec l'accord d'Eric** : une fois une étape terminée et vérifiée, **demander avant de faire le commit et le push** (le push reconstruit et republie le site en ligne). Un commit par étape, avec un message clair en français.
 6. **Tenir à jour le guide d'utilisation** `docs/guide-utilisation.md` (pour les utilisateurs, en français simple, sans détails techniques) à chaque étape qui change ce que le site fait ou montre, dans le même commit.
 7. **Être pédagogique** : Eric est formateur ; expliquer le pourquoi des choix techniques, en termes simples.
 8. **Rien sans connexion** : chaque page et chaque action qui lit ou modifie l'arbre appelle `exigerMembre()` (compte accepté et actif) ; les actions d'administration appellent `exigerAdministrateur()`. `proxy.ts` ne fait qu'un contrôle rapide du cookie : ce n'est pas la vraie protection.
 
-## Les étapes prévues (0 à 5)
-
-| # | Étape | Vérification dans le navigateur |
-|---|---|---|
-| 0 | **Socle** : Next.js, Tailwind, Prisma et base MySQL de développement, modules communs repris d'Objectif (`lib/prisma.ts`, `lib/email.ts`, `lib/stockage.ts`, mots de passe), page d'accueil | L'accueil s'affiche avec « Base de données : connectée » |
-| 1 | **Connexion et administrateurs** : `npm run creer-superadmin`, page de connexion, site entièrement protégé, mot de passe oublié, « Mon compte », limite des connexions ratées | Eric se connecte ; déconnecté, toute page renvoie vers la connexion |
-| 2 | **Demandes d'accès** : formulaire de demande, liste « Demandes en attente » des administrateurs, Accepter / Refuser, e-mails, nommer d'autres administrateurs | Un visiteur demande l'accès, Eric l'accepte, le visiteur se connecte |
-| 3 | **Personnes** : créer, modifier, supprimer une personne (civilité, prénom, nom, nom de jeune fille, année de naissance, photo) ; tuile cliquable ; liste de toutes les personnes avec recherche | Eric crée sa fiche avec sa photo et la voit en tuile |
-| 4 | **Liens de famille** : depuis une fiche, « Ajouter un père / une mère / un frère ou une sœur / un enfant / un conjoint » ; fiche avec parents, conjoint(s), frères et sœurs, enfants, tous cliquables | Depuis Eric, on ajoute ses parents puis un frère, et on navigue de l'un à l'autre |
-| 5 | **Vue en arbre** : une rangée par génération, époux côte à côte, fratries sur la même rangée, centrée sur la personne choisie, clic sur une tuile pour recentrer ; adaptée au téléphone | L'arbre d'Eric sur 3 générations s'affiche comme voulu |
-
 ## Modèle de données prévu (`prisma/schema.prisma`)
 
-À ajouter étape par étape, en proposant le schéma avant chaque migration.
+À ajouter au fil du plan, en proposant le schéma avant chaque migration.
 
-- `Membre` (étapes 1-2) : compte d'accès au site (ce n'est pas une personne de l'arbre) : `prenom`, `nom`, e-mail unique, `motDePasseHash`, `statut` (`EN_ATTENTE` / `ACCEPTE` / `REFUSE` / `DESACTIVE`), `messageDemande`, `admin`, `superAdmin`, `valideParId`, `valideLe`.
+- `Membre` : compte d'accès au site (ce n'est pas une personne de l'arbre) : `prenom`, `nom`, e-mail unique, `motDePasseHash`, `statut` (`EN_ATTENTE` / `ACCEPTE` / `REFUSE` / `DESACTIVE`), `messageDemande`, `admin`, `superAdmin`, `valideParId`, `valideLe`.
 - `SessionMembre`, `JetonEmail` (mot de passe oublié), `TentativeConnexion`, `JournalEmail` : repris d'Objectif.
-- `Personne` (étape 3) : `civilite` (`M` / `MME` / `MLLE`), `prenom`, `nom`, `nomJeuneFille`, `anneeNaissance` (entier, facultatif), `photo`, `creeParId`, `modifieParId`.
-- `Famille` (étape 4) : un **couple et ses enfants**, sur le modèle des logiciels de généalogie (et du format GEDCOM) : `parent1Id`, `parent2Id` (l'un ou l'autre peut manquer), `marie` (vrai par défaut).
-- `Personne.familleOrigineId` (étape 4) : la famille dont la personne est l'enfant.
+- `Personne` : `civilite` (`M` / `MME` / `MLLE`), `prenom`, `nom`, `nomJeuneFille`, `anneeNaissance` (entier, facultatif), `photo`, `creeParId`, `modifieParId`.
+- `Famille` : un **couple et ses enfants**, sur le modèle des logiciels de généalogie (et du format GEDCOM) : `parent1Id`, `parent2Id` (l'un ou l'autre peut manquer), `marie` (vrai par défaut).
+- `Personne.familleOrigineId` : la famille dont la personne est l'enfant.
 
 **Pourquoi une table `Famille` plutôt que `pereId` / `mereId` ?** Parce qu'une seule règle répond à toutes les demandes :
 - **conjoint** = l'autre parent d'une même famille (les époux s'affichent côte à côte) ;
@@ -107,7 +96,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - Nom du site et nom de domaine.
 - Un seul arbre (celui de la famille) ou plusieurs familles sur le même site (version SaaS) ? Pour l'instant : un seul arbre, sans fermer la porte au reste.
 - Les membres acceptés peuvent-ils tous modifier l'arbre, ou certains seulement le consulter ?
-- Bibliothèque pour dessiner l'arbre (étape 5) : à proposer le moment venu (un dessin fait maison en CSS est possible).
+- Bibliothèque pour dessiner l'arbre : à proposer le moment venu (un dessin fait maison en CSS est possible).
 
 ## État d'avancement
 
