@@ -4,7 +4,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const NOM_COOKIE = "arbre_session"; // même nom que dans lib/session.ts
-const PAGES_PUBLIQUES = ["/connexion"];
+// Pages visibles sans être connecté : chacune ne montre aucune donnée de l'arbre.
+const PAGES_PUBLIQUES = ["/connexion", "/demande-acces", "/mot-de-passe-oublie", "/nouveau-mot-de-passe"];
 
 export function proxy(requete: NextRequest) {
   const { pathname } = requete.nextUrl;

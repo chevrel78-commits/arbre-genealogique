@@ -1,18 +1,13 @@
 "use server";
 // Actions de connexion et de déconnexion (exécutées sur le serveur, appelées par les formulaires).
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { empreinteLeurre, verifierMotDePasse } from "@/lib/mot-de-passe";
 import { connexionBloquee, noterEchec, oublierEchecs } from "@/lib/limite-connexion";
 import { fermerSession, ouvrirSession } from "@/lib/session";
+import { adresseIp } from "@/lib/ip";
 
 export type EtatConnexion = { erreur?: string; email?: string };
-
-async function adresseIp() {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "inconnue";
-}
 
 export async function seConnecter(_etat: EtatConnexion, donnees: FormData): Promise<EtatConnexion> {
   const email = String(donnees.get("email") ?? "").trim().toLowerCase();

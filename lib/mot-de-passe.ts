@@ -17,7 +17,7 @@ const R = 8;
 const P = 1;
 const LONGUEUR = 64;
 
-export const LONGUEUR_MINIMALE = 10;
+export { LONGUEUR_MINIMALE } from "./longueurs";
 
 // Format stocké : scrypt$N$r$p$sel$empreinte (sel et empreinte en base64).
 export async function hacherMotDePasse(motDePasse: string): Promise<string> {

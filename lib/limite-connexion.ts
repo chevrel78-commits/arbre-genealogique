@@ -28,3 +28,17 @@ export async function noterEchec(email: string, ip: string) {
 export async function oublierEchecs(email: string) {
   await prisma.tentativeConnexion.deleteMany({ where: { espace: ESPACE, email } });
 }
+
+// Limite des formulaires publics (demande d'accès, mot de passe oublié), pour freiner les robots :
+// chaque envoi est noté dans la même table, sous un autre « espace ».
+// Renvoie vrai si la limite est atteinte ; sinon note l'envoi et renvoie faux.
+export async function limiteAtteinte(espace: "demande" | "oubli", email: string, ip: string, maxParIp: number, maxParEmail: number) {
+  const depuis = new Date(Date.now() - 60 * 60 * 1000); // fenêtre d'une heure
+  const [parIp, parEmail] = await Promise.all([
+    prisma.tentativeConnexion.count({ where: { espace, ip, creeLe: { gte: depuis } } }),
+    prisma.tentativeConnexion.count({ where: { espace, email, creeLe: { gte: depuis } } }),
+  ]);
+  if (parIp >= maxParIp || parEmail >= maxParEmail) return true;
+  await prisma.tentativeConnexion.create({ data: { espace, email: email.slice(0, 255), ip: ip.slice(0, 64) } });
+  return false;
+}

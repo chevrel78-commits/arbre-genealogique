@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { membreDeLaSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 import { seDeconnecter } from "../actions-session";
 
 // Mise en page des pages réservées aux membres : bandeau avec le nom du membre et « Se déconnecter ».
@@ -9,11 +10,24 @@ import { seDeconnecter } from "../actions-session";
 async function MembreConnecte() {
   const membre = await membreDeLaSession();
   if (!membre) return null;
+  const estAdmin = membre.admin || membre.superAdmin;
+  // Pour un administrateur : nombre de demandes d'accès qui attendent une réponse.
+  const enAttente = estAdmin ? await prisma.membre.count({ where: { statut: "EN_ATTENTE" } }) : 0;
   return (
-    <div className="flex items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center gap-3 text-sm">
+      {estAdmin && (
+        <Link href="/admin" className="rounded-lg px-3 py-1 font-medium text-arbre hover:bg-arbre-doux">
+          Administration
+          {enAttente > 0 && (
+            <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white" title="Demandes en attente">
+              {enAttente}
+            </span>
+          )}
+        </Link>
+      )}
       <span className="text-foreground/70">
         {membre.prenom} {membre.nom}
-        {(membre.admin || membre.superAdmin) && (
+        {estAdmin && (
           <span className="ml-2 rounded-full bg-arbre-doux px-2 py-0.5 text-xs font-medium text-arbre">Administrateur</span>
         )}
       </span>

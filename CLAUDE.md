@@ -52,7 +52,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 À ajouter au fil du plan, en proposant le schéma avant chaque migration.
 
 - `Membre` : compte d'accès au site (ce n'est pas une personne de l'arbre) : `prenom`, `nom`, e-mail unique, `motDePasseHash`, `statut` (`EN_ATTENTE` / `ACCEPTE` / `REFUSE` / `DESACTIVE`), `messageDemande`, `admin`, `superAdmin`, `valideParId`, `valideLe`.
-- `SessionMembre`, `JetonEmail` (mot de passe oublié), `TentativeConnexion`, `JournalEmail` : repris d'Objectif.
+- `SessionMembre`, `JetonEmail` (mot de passe oublié), `TentativeConnexion`, `JournalEmail` : repris d'Objectif (en place).
 - `Personne` : `civilite` (`M` / `MME` / `MLLE`), `prenom`, `nom`, `nomJeuneFille`, `anneeNaissance` (entier, facultatif), `photo`, `creeParId`, `modifieParId`.
 - `Famille` : un **couple et ses enfants**, sur le modèle des logiciels de généalogie (et du format GEDCOM) : `parent1Id`, `parent2Id` (l'un ou l'autre peut manquer), `marie` (vrai par défaut).
 - `Personne.familleOrigineId` : la famille dont la personne est l'enfant.
@@ -80,7 +80,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - Hostinger **n'utilise pas `npm start`** : rien ne doit dépendre du script `start`.
 - **Déploiement automatique** : chaque push sur `main` reconstruit et republie le site.
 - Les variables d'environnement en ligne se règlent dans hPanel → site → variables d'environnement. L'outil Hostinger qui les modifie **remplace la liste entière** : toujours renvoyer la liste complète.
-- Site : **https://arbre.altea.website** (choix d'Eric du 2026-11-22), application Node.js de l'hébergement Hostinger (compte `u145882112`, comme Palmares et Objectif), créé le 2026-11-22, relié au dépôt GitHub (construction à chaque push sur `main`, Node.js 24). Variables en ligne : `DATABASE_URL` (base réelle, `127.0.0.1:3306`), `URL_SITE`, `STOCKAGE_MEDIAS` = `/home/u145882112/arbre-stockage/medias`.
+- Site : **https://arbre.altea.website** (choix d'Eric du 2026-11-22), application Node.js de l'hébergement Hostinger (compte `u145882112`, comme Palmares et Objectif), créé le 2026-11-22, relié au dépôt GitHub (construction à chaque push sur `main`, Node.js 24). Variables en ligne : `DATABASE_URL` (base réelle, `127.0.0.1:3306`), `URL_SITE`, `STOCKAGE_MEDIAS` = `/home/u145882112/arbre-stockage/medias`, et pour les e-mails (étape 2) `SMTP_HOTE` = `smtp.hostinger.com`, `SMTP_PORT` = `465`, `SMTP_UTILISATEUR` = `noreply@altea.website`, `SMTP_MOT_DE_PASSE` (saisi par Eric seul), `EMAIL_EXPEDITEUR` = `Arbre généalogique <noreply@altea.website>`.
 
 ## Environnement de développement local
 
@@ -104,7 +104,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 - [x] Étape 0 : socle (2026-11-22) : site Hostinger `arbre.altea.website` relié à GitHub, trois bases créées, migration `init` appliquée pendant la construction
 - [x] Étape 1 : connexion (2026-11-22) : tables `Membre` et `SessionMembre` (migration `connexion`), page `/connexion`, bouton « Se déconnecter », tout le site protégé (`proxy.ts` + `exigerMembre()`), blocage 15 min après 5 essais ratés, commande `npm run creer-admin`
-- [ ] Étape 2 : demandes d'accès validées par les administrateurs, e-mails, mot de passe oublié
+- [x] Étape 2 : demandes d'accès (2026-11-22) : pages publiques `/demande-acces`, `/mot-de-passe-oublie`, `/nouveau-mot-de-passe` ; page `/admin` (accepter / refuser, désactiver / réactiver, nommer administrateur) ; e-mails aux demandeurs et aux administrateurs ; table `JetonEmail` (migration `demandes_acces`)
 
 ## Décisions
 
@@ -113,3 +113,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - 2026-11-22 : **Next.js 16.4.6** (et non 16.4.3 comme Palmares et Objectif) : la 16.4.3 est signalée par Next.js comme touchée par une faille de sécurité et refuse de construire le site tant qu'on ne relance pas la commande.
 - 2026-11-22 : **connexion maison** : mot de passe haché par scrypt (`lib/mot-de-passe.ts`, 10 caractères minimum) ; session = jeton aléatoire dans un cookie httpOnly `arbre_session` (30 jours), la base ne garde que son empreinte SHA-256 (`lib/session.ts`) ; 5 essais ratés par e-mail (ou 20 par adresse IP) en 15 minutes bloquent la connexion (`lib/limite-connexion.ts`). Seul un compte au statut `ACCEPTE` peut entrer. Pages réservées aux membres dans le groupe `app/(membres)/` (bandeau avec nom et « Se déconnecter »). « Mot de passe oublié » reporté à l'étape 2 (il a besoin des e-mails).
 - 2026-11-22 : avec `cacheComponents`, toute lecture de session passe par `membreDeLaSession()`, qui appelle `await connection()` d'abord, et se fait dans un composant sous `<Suspense>` (sinon Next.js refuse `new Date()` pendant le pré-rendu).
+- 2026-11-22 : **demandes d'accès** : un visiteur crée un compte `EN_ATTENTE` ; un administrateur l'accepte ou le refuse sur `/admin` (actions dans `app/(membres)/admin/actions.ts`, toutes derrière `exigerAdministrateur()`). Règles : personne ne touche au super-administrateur ni à son propre compte ; seul le super-administrateur nomme, retire ou désactive un administrateur. Une demande refusée peut être refaite (elle repasse en attente). Les pages publiques ne révèlent jamais si une adresse a un compte (même réponse ; le titulaire d'un compte actif reçoit un e-mail). Limites : 5 demandes d'accès par heure et par IP (3 par e-mail), 10 demandes de mot de passe par heure et par IP (3 par e-mail), notées dans `TentativeConnexion` (espaces `demande` et `oubli`).
+- 2026-11-22 : **mot de passe oublié** : lien à usage unique valable 1 heure (`lib/jetons.ts`, la base ne garde que l'empreinte SHA-256 du jeton) ; le nouveau mot de passe ferme toutes les sessions du membre puis le connecte. Textes des e-mails dans `lib/emails-membres.ts` ; un e-mail qui ne part pas ne bloque jamais l'action (échec noté dans `JournalEmail`).
+- 2026-11-22 : **expéditeur des e-mails** : la boîte existante `noreply@altea.website` (offre mail Hostinger d'Eric), via `smtp.hostinger.com:465`. Sans `SMTP_HOTE` (développement), le texte des e-mails s'affiche dans le terminal de `npm run dev`.
+- 2026-11-22 : après une action d'administration, le message de confirmation passe par un cookie de 10 secondes (`arbre_admin_info`) et `revalidatePath("/", "layout")` recalcule aussi le bandeau (compteur de demandes en attente) en même temps que la page.
