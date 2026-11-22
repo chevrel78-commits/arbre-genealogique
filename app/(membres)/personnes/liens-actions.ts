@@ -9,6 +9,7 @@ import { lireValeurs, texteDe, validerPersonne, type EtatPersonne } from "@/lib/
 import { avecVerrou, ErreurLien, relier, retirerConjoint, retirerFrere, retirerParent, type OptionsLien } from "@/lib/liens";
 import { COOKIE_INFO_FICHE } from "@/lib/messages-fiche";
 import { estTypeLien, identifiantValide } from "@/lib/personnes";
+import { supprimerPhoto } from "@/lib/stockage";
 
 function lireContexte(d: FormData) {
   const sourceId = identifiantValide(texteDe(d, "source"));
@@ -95,7 +96,13 @@ export async function supprimerPersonne(d: FormData) {
   await exigerAdministrateur();
   const id = identifiantValide(texteDe(d, "id"));
   if (id === null) return;
-  await avecVerrou((tx) => tx.personne.deleteMany({ where: { id } }));
+  const photo = await avecVerrou(async (tx) => {
+    const personne = await tx.personne.findUnique({ where: { id }, select: { photo: true } });
+    await tx.personne.deleteMany({ where: { id } });
+    return personne?.photo;
+  });
+  // Le fichier n'est effacé qu'une fois la suppression enregistrée.
+  await supprimerPhoto(photo);
   revalidatePath("/", "layout");
   redirect("/");
 }

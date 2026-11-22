@@ -12,6 +12,7 @@ export type PersonneArbre = {
   nom: string;
   nomJeuneFille: string | null;
   anneeNaissance: number | null;
+  photo: string | null;
   familleOrigineId: number | null;
 };
 export type FamilleArbre = { id: number; parent1Id: number | null; parent2Id: number | null; marie: boolean };

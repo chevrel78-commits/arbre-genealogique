@@ -31,7 +31,7 @@ export function FormulaireRelier({
           <li key={c.id} className="flex items-center justify-between gap-3 py-2">
             <span className="flex min-w-0 items-center gap-3">
               <span className="origin-left scale-75">
-                <Portrait prenom={c.prenom} nom={c.nom} />
+                <Portrait prenom={c.prenom} nom={c.nom} photo={c.photo} />
               </span>
               <span className="min-w-0">
                 <span className="block break-words font-medium">

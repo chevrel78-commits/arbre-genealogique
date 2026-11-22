@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { FormulairePhoto } from "../formulaire-photo";
 import { retirerLien, supprimerPersonne } from "../liens-actions";
 import { BoutonConfirme } from "@/components/bouton-confirme";
 import { Portrait, TuilePersonne, type PersonneTuile } from "@/components/tuile-personne";
@@ -113,7 +114,7 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
 
       <article className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-          <Portrait prenom={p.prenom} nom={p.nom} grand />
+          <Portrait prenom={p.prenom} nom={p.nom} photo={p.photo} grand />
           <div className="min-w-0">
             <p className="text-sm text-foreground/60">{CIVILITES[p.civilite]}</p>
             <h1 className="break-words text-2xl font-semibold">{sourceNom}</h1>
@@ -125,6 +126,8 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
             <p className="break-words text-foreground/70">{phraseNaissance(p)}</p>
           </div>
         </div>
+
+        <FormulairePhoto id={p.id} aUnePhoto={p.photo !== null} nom={sourceNom} />
 
         <div className="flex flex-wrap gap-2">
           <Link href={`/personnes/${p.id}/modifier`} className="inline-block rounded-lg bg-arbre px-4 py-2 font-medium text-white hover:opacity-90">

@@ -7,6 +7,8 @@ const nextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
+    // proxy.ts relit chaque requête : au-delà de 10 Mo par défaut, le fichier serait tronqué sans erreur.
+    proxyClientMaxBodySize: "11mb",
     serverActions: {
       // Envoi de photos jusqu'à 10 Mo (photos des personnes), plus une marge.
       bodySizeLimit: "11mb",

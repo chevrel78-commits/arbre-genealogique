@@ -74,8 +74,8 @@ refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une 
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-Pour l'instant, les personnes apparaissent avec leurs initiales. Les photos
-arriveront prochainement.
+**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
+Les photos ne sont visibles que par les membres connectés. Le lieu de prise de vue et les autres informations cachées dans le fichier sont supprimés à l'envoi. Sans photo, la personne apparaît avec ses initiales.
 
 ## Les liens de famille
 
