@@ -1,5 +1,7 @@
 # CLAUDE.md — Arbre généalogique
 
+> **Langue : toujours parler à Eric en français**, sans exception : chaque message, question, récapitulatif, compte rendu, message de commit et commentaire du code. Jamais d'anglais, même pour un message court ou technique (demande d'Eric du 2026-11-22).
+
 ## Le produit
 
 Un site où une famille construit **ensemble** son **arbre généalogique**, en ligne. Le site est **privé** : on n'y entre qu'avec un compte validé par un administrateur.
