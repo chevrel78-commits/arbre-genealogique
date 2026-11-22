@@ -79,7 +79,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - Hostinger **n'utilise pas `npm start`** : rien ne doit dépendre du script `start`.
 - **Déploiement automatique** : chaque push sur `main` reconstruit et republie le site.
 - Les variables d'environnement en ligne se règlent dans hPanel → site → variables d'environnement. L'outil Hostinger qui les modifie **remplace la liste entière** : toujours renvoyer la liste complète.
-- Site, nom de domaine et application Node.js : **à créer** (voir « Questions ouvertes »).
+- Site : **https://arbre.altea.website** (choix d'Eric du 2026-11-22), application Node.js de l'hébergement Hostinger (même compte que Palmares et Objectif) : **à créer**.
 
 ## Environnement de développement local
 
@@ -95,7 +95,6 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 ## Questions ouvertes
 
-- Nom du site et nom de domaine.
 - Un seul arbre (celui de la famille) ou plusieurs familles sur le même site (version SaaS) ? Pour l'instant : un seul arbre, sans fermer la porte au reste.
 - Les membres acceptés peuvent-ils tous modifier l'arbre, ou certains seulement le consulter ?
 - Bibliothèque pour dessiner l'arbre : à proposer le moment venu (un dessin fait maison en CSS est possible).
