@@ -40,3 +40,52 @@ model TentativeConnexion {
   @@index([espace, email, creeLe])
   @@index([espace, ip, creeLe])
 }
+
+// ---------------------------------------------------------------------------------------------------
+// Étape 1 : comptes d'accès au site et sessions de connexion.
+// ---------------------------------------------------------------------------------------------------
+
+enum StatutMembre {
+  EN_ATTENTE // demande d'accès pas encore traitée (étape 2)
+  ACCEPTE // peut se connecter
+  REFUSE // demande refusée par un administrateur
+  DESACTIVE // compte fermé par un administrateur
+}
+
+// Compte qui permet d'entrer sur le site. Ce n'est PAS une personne de l'arbre.
+model Membre {
+  id             Int          @id @default(autoincrement())
+  prenom         String       @db.VarChar(100)
+  nom            String       @db.VarChar(100)
+  email          String       @unique @db.VarChar(255) // toujours en minuscules
+  motDePasseHash String       @db.VarChar(255) // empreinte scrypt, jamais le mot de passe (lib/mot-de-passe.ts)
+  statut         StatutMembre @default(EN_ATTENTE)
+  messageDemande String?      @db.VarChar(1000) // « je suis le petit-fils de… » (étape 2)
+  admin          Boolean      @default(false)
+  superAdmin     Boolean      @default(false)
+  valideParId    Int?
+  valideLe       DateTime?
+  creeLe         DateTime     @default(now())
+  modifieLe      DateTime     @updatedAt
+
+  validePar Membre?         @relation("Validation", fields: [valideParId], references: [id], onDelete: SetNull)
+  valides   Membre[]        @relation("Validation")
+  sessions  SessionMembre[]
+
+  @@index([statut])
+}
+
+// Connexion ouverte. Le navigateur garde un jeton secret (cookie) ; la base n'en garde que l'empreinte
+// (SHA-256) : quelqu'un qui lirait la base ne pourrait pas s'en servir pour se faire passer pour un membre.
+model SessionMembre {
+  id        Int      @id @default(autoincrement())
+  jetonHash String   @unique @db.Char(64)
+  membreId  Int
+  expireLe  DateTime
+  creeLe    DateTime @default(now())
+
+  membre Membre @relation(fields: [membreId], references: [id], onDelete: Cascade)
+
+  @@index([membreId])
+  @@index([expireLe])
+}

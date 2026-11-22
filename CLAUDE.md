@@ -69,6 +69,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - `npx prisma migrate dev --name <nom>` : créer et appliquer une migration (utilise la base shadow).
 - `npx prisma generate` : régénérer le client après un changement de schéma, **puis relancer `npm run dev`**.
 - `npx prisma studio` : explorer la base dans le navigateur.
+- `npm run creer-admin` : créer (ou remettre en état : nouveau mot de passe) le compte du super-administrateur dans la base de `DATABASE_URL`. Le mot de passe se tape dans le terminal, sans s'afficher, et ne passe jamais par Claude.
 - `npm run build` (lancé par Hostinger à chaque push) : `prisma migrate deploy` puis `next build --webpack`.
 
 ## Hébergement (contraintes reprises de Palmares et Objectif)
@@ -102,9 +103,13 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 ## État d'avancement
 
 - [x] Étape 0 : socle (2026-11-22) : site Hostinger `arbre.altea.website` relié à GitHub, trois bases créées, migration `init` appliquée pendant la construction
+- [x] Étape 1 : connexion (2026-11-22) : tables `Membre` et `SessionMembre` (migration `connexion`), page `/connexion`, bouton « Se déconnecter », tout le site protégé (`proxy.ts` + `exigerMembre()`), blocage 15 min après 5 essais ratés, commande `npm run creer-admin`
+- [ ] Étape 2 : demandes d'accès validées par les administrateurs, e-mails, mot de passe oublié
 
 ## Décisions
 
 - 2026-11-22 : même stack que Palmares et Objectif (Next.js 16, Prisma 7, MariaDB, Hostinger, Git) ; comptes séparés des deux autres sites ; dépôt GitHub `chevrel78-commits/arbre-genealogique` (privé).
 - 2026-11-22 : **site privé** : accès par mot de passe, **demande d'accès validée par un administrateur** (pas d'inscription libre) ; personnes avec civilité, prénom, nom, nom de jeune fille, **année** de naissance et photo ; liens de famille par une table `Famille` (couple + enfants).
 - 2026-11-22 : **Next.js 16.4.6** (et non 16.4.3 comme Palmares et Objectif) : la 16.4.3 est signalée par Next.js comme touchée par une faille de sécurité et refuse de construire le site tant qu'on ne relance pas la commande.
+- 2026-11-22 : **connexion maison** : mot de passe haché par scrypt (`lib/mot-de-passe.ts`, 10 caractères minimum) ; session = jeton aléatoire dans un cookie httpOnly `arbre_session` (30 jours), la base ne garde que son empreinte SHA-256 (`lib/session.ts`) ; 5 essais ratés par e-mail (ou 20 par adresse IP) en 15 minutes bloquent la connexion (`lib/limite-connexion.ts`). Seul un compte au statut `ACCEPTE` peut entrer. Pages réservées aux membres dans le groupe `app/(membres)/` (bandeau avec nom et « Se déconnecter »). « Mot de passe oublié » reporté à l'étape 2 (il a besoin des e-mails).
+- 2026-11-22 : avec `cacheComponents`, toute lecture de session passe par `membreDeLaSession()`, qui appelle `await connection()` d'abord, et se fait dans un composant sous `<Suspense>` (sinon Next.js refuse `new Date()` pendant le pré-rendu).
