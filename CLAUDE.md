@@ -102,9 +102,10 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 
 ## État d'avancement
 
-- [ ] Étape 0 : socle
+- [ ] Étape 0 : socle : code prêt et vérifié (construction réussie, accueil « Base de données : non connectée » sans base) ; reste la partie Hostinger (bases, site Node.js, liaison GitHub, variables)
 
 ## Décisions
 
 - 2026-11-22 : même stack que Palmares et Objectif (Next.js 16, Prisma 7, MariaDB, Hostinger, Git) ; comptes séparés des deux autres sites ; dépôt GitHub `chevrel78-commits/arbre-genealogique` (privé).
 - 2026-11-22 : **site privé** : accès par mot de passe, **demande d'accès validée par un administrateur** (pas d'inscription libre) ; personnes avec civilité, prénom, nom, nom de jeune fille, **année** de naissance et photo ; liens de famille par une table `Famille` (couple + enfants).
+- 2026-11-22 : **Next.js 16.4.6** (et non 16.4.3 comme Palmares et Objectif) : la 16.4.3 est signalée par Next.js comme touchée par une faille de sécurité et refuse de construire le site tant qu'on ne relance pas la commande.

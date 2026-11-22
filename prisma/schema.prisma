@@ -1,0 +1,42 @@
+// Schéma de la base de l'arbre généalogique (MySQL / MariaDB sur Hostinger).
+// L'URL de connexion est lue dans prisma.config.ts (variable DATABASE_URL du fichier .env).
+// Étape 0 : modules communs (journal des e-mails, connexions ratées), repris d'Objectif.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum StatutEmail {
+  ENVOYE // accepté par le serveur d'envoi
+  ECHEC // refusé ou serveur injoignable (raison dans `erreur`)
+  SIMULE // pas de SMTP configuré (développement) : écrit dans le journal du serveur
+}
+
+// Journal des e-mails envoyés par le site (lib/email.ts) : jamais le contenu ni le lien.
+model JournalEmail {
+  id           Int         @id @default(autoincrement())
+  type         String      @db.VarChar(30) // ex. « ACCES_ACCEPTE », « MOT_DE_PASSE »
+  destinataire String      @db.VarChar(255)
+  statut       StatutEmail
+  erreur       String?     @db.VarChar(500)
+  creeLe       DateTime    @default(now())
+
+  @@index([creeLe])
+}
+
+// Connexion ratée, pour limiter les essais (lib/limite-connexion.ts, étape 1).
+model TentativeConnexion {
+  id     Int      @id @default(autoincrement())
+  espace String   @db.VarChar(20) // "membre"
+  email  String   @db.VarChar(255)
+  ip     String   @db.VarChar(64)
+  creeLe DateTime @default(now())
+
+  @@index([espace, email, creeLe])
+  @@index([espace, ip, creeLe])
+}
