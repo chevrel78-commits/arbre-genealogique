@@ -58,8 +58,43 @@ refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une 
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-Pour l'instant, les personnes apparaissent avec leurs initiales et ne sont pas encore reliées entre
-elles. Les liens de famille, le dessin de l'arbre et les photos arriveront prochainement.
+Pour l'instant, les personnes apparaissent avec leurs initiales. Le dessin de l'arbre et les photos
+arriveront prochainement.
+
+## Les liens de famille
+
+La fiche d'une personne présente ses **parents**, ses **conjoints**, ses **frères et sœurs** et ses
+**enfants**. Cliquez sur une tuile pour passer à la fiche de ce proche.
+
+**Ajouter un proche**
+
+1. Sur la fiche, cliquez sur **+ Père**, **+ Mère**, **+ Frère**, **+ Sœur**, **+ Enfant** ou
+   **+ Conjoint**.
+2. Si la personne est **déjà dans l'arbre**, recherchez son nom et cliquez sur **« Relier »**. Pensez-y
+   d'abord : cela évite de créer la même personne deux fois.
+3. Sinon, remplissez le formulaire **« Ou une nouvelle personne »** et cliquez sur **« Enregistrer »**.
+   La civilité et le nom de famille sont proposés quand c'est possible : vérifiez-les.
+
+**Bon à savoir**
+
+- **Conjoint** : une personne peut en avoir plusieurs (remariage). Décochez **« Mariés »** pour un
+  couple non marié.
+- **Enfant** : si la personne a un conjoint, indiquez de quelle union l'enfant est issu. Les
+  **demi-frères et demi-sœurs** apparaissent alors tout seuls.
+- **Frère ou sœur** : vous pouvez en ajouter même si les parents sont inconnus. Un parent ajouté plus
+  tard vaudra pour toute la fratrie.
+- Le site refuse les liens impossibles, par exemple devenir l'ancêtre de son propre ancêtre.
+
+**Retirer un lien** : sous la tuile du proche, cliquez sur **« Retirer le lien »** et confirmez. Les
+deux personnes restent dans l'arbre.
+
+- Une personne qui perd son **seul parent connu** n'apparaît plus avec les frères et sœurs liés par ce
+  parent.
+- Pour retirer un **couple qui a des enfants**, retirez d'abord le lien avec ses enfants.
+
+**Supprimer une personne** (administrateurs seulement) : en bas de la fiche, cliquez sur **« Supprimer
+cette personne »**. Le message indique le nombre de liens retirés. Ses proches restent dans l'arbre,
+mais **la suppression est définitive**.
 
 ## Se déconnecter
 

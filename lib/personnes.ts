@@ -77,6 +77,21 @@ export function phraseNaissance(p: {
   return [p.civilite === "M" ? "Né" : "Née", date, lieu ? `à ${lieu}` : ""].filter(Boolean).join(" ");
 }
 
+// Les six liens que l'on peut ajouter depuis une fiche.
+export const LIENS = {
+  pere: { libelle: "Père", titre: "un père" },
+  mere: { libelle: "Mère", titre: "une mère" },
+  frere: { libelle: "Frère", titre: "un frère" },
+  soeur: { libelle: "Sœur", titre: "une sœur" },
+  enfant: { libelle: "Enfant", titre: "un enfant" },
+  conjoint: { libelle: "Conjoint", titre: "un conjoint" },
+} as const;
+export type TypeLien = keyof typeof LIENS;
+
+export function estTypeLien(valeur: string): valeur is TypeLien {
+  return Object.hasOwn(LIENS, valeur);
+}
+
 // Transforme un identifiant reçu dans une adresse ou un formulaire en nombre sûr (ou null s'il est invalide).
 export function identifiantValide(texte: string): number | null {
   if (!/^[1-9]\d{0,9}$/.test(texte)) return null;

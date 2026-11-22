@@ -2,12 +2,28 @@
 // Formulaire commun à l'ajout et à la modification d'une personne.
 import Link from "next/link";
 import { useActionState } from "react";
-import { enregistrerPersonne, type EtatPersonne, type ValeursPersonne } from "./actions";
+import { enregistrerPersonne } from "./actions";
+import { ChampsLien, type OptionsFormulaireLien } from "./champs-lien";
 import { BoutonPrincipal, Champ, classeChamp, Erreur } from "@/components/formulaire";
+import type { EtatPersonne, ValeursPersonne } from "@/lib/formulaire-personne";
 import { CIVILITES, MOIS, type CodeCivilite } from "@/lib/personnes";
 
-export function FormulairePersonne({ id, initiales }: { id?: number; initiales?: ValeursPersonne }) {
-  const [etat, action, enCours] = useActionState<EtatPersonne, FormData>(enregistrerPersonne, {});
+export function FormulairePersonne({
+  id,
+  initiales,
+  actionServeur = enregistrerPersonne,
+  champsCaches,
+  optionsLien,
+  retour,
+}: {
+  id?: number;
+  initiales?: Partial<ValeursPersonne>;
+  actionServeur?: (etat: EtatPersonne, d: FormData) => Promise<EtatPersonne>;
+  champsCaches?: Record<string, string>;
+  optionsLien?: OptionsFormulaireLien;
+  retour?: string;
+}) {
+  const [etat, action, enCours] = useActionState<EtatPersonne, FormData>(actionServeur, {});
   // Après l'envoi, React remet le formulaire à ses valeurs « par défaut » : en cas d'erreur, ce sont
   // celles que la personne vient de saisir, y compris la civilité cochée.
   const v = etat.valeurs ?? initiales;
@@ -15,6 +31,9 @@ export function FormulairePersonne({ id, initiales }: { id?: number; initiales?:
   return (
     <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
+      {Object.entries(champsCaches ?? {}).map(([nom, valeur]) => (
+        <input key={nom} type="hidden" name={nom} value={valeur} />
+      ))}
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">Civilité</legend>
@@ -103,10 +122,12 @@ export function FormulairePersonne({ id, initiales }: { id?: number; initiales?:
         defaultValue={v?.lieuNaissance}
       />
 
+      <ChampsLien options={optionsLien} etat={etat} />
+
       <Erreur>{etat.erreur}</Erreur>
       <div className="flex flex-wrap items-center gap-4">
         <BoutonPrincipal enCours={enCours} texte="Enregistrer" texteEnCours="Enregistrement…" />
-        <Link href={id !== undefined ? `/personnes/${id}` : "/"} className="text-sm text-arbre underline">
+        <Link href={retour ?? (id !== undefined ? `/personnes/${id}` : "/")} className="text-sm text-arbre underline">
           Annuler
         </Link>
       </div>

@@ -97,7 +97,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 ## Questions ouvertes
 
 - Un seul arbre (celui de la famille) ou plusieurs familles sur le même site (version SaaS) ? Pour l'instant : un seul arbre, sans fermer la porte au reste.
-- Supprimer une personne : à traiter à l'étape 4, avec confirmation, car cela touche aux liens de famille.
+- Parents de même sexe : les boutons « Père » et « Mère » supposent aujourd'hui un parent M. et un parent Mme ou Mlle. À adapter si la famille en a besoin.
 
 ## État d'avancement
 
@@ -105,7 +105,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - [x] Étape 1 : connexion (2026-11-22) : tables `Membre` et `SessionMembre` (migration `connexion`), page `/connexion`, bouton « Se déconnecter », tout le site protégé (`proxy.ts` + `exigerMembre()`), blocage 15 min après 5 essais ratés, commande `npm run creer-admin`
 - [x] Étape 2 : demandes d'accès (2026-11-22) : pages publiques `/demande-acces`, `/mot-de-passe-oublie`, `/nouveau-mot-de-passe` ; page `/admin` (accepter / refuser, désactiver / réactiver, nommer administrateur) ; e-mails aux demandeurs et aux administrateurs ; table `JetonEmail` (migration `demandes_acces`)
 - [x] Étape 3 : personnes (2026-11-22) : tables `Personne` et `Famille` (migrations `personnes` et `date_lieu_naissance`, `Famille` encore vide), date partielle et lieu de naissance, tuiles sur l'accueil, pages `/personnes/nouvelle`, `/personnes/[id]` et `/personnes/[id]/modifier`
-- [ ] Étape 4 : liens de famille depuis la fiche (parent, frère ou sœur, enfant, conjoint) et suppression d'une personne avec confirmation
+- [x] Étape 4 : liens de famille (2026-11-22) : rubriques Parents, Conjoints, Frères et sœurs, Enfants sur la fiche ; page `/personnes/[id]/ajouter/[lien]` (nouvelle personne ou recherche dans l'arbre) ; retrait d'un lien ; suppression d'une personne réservée aux administrateurs ; aucune migration
 - [ ] Étape 5 : dessin de l'arbre fait maison (une rangée par génération, époux côte à côte, traits de filiation)
 - [ ] Étape 6 : photos (envoi, redimensionnement avec `sharp`, affichage sur les tuiles)
 
@@ -124,3 +124,6 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - 2026-11-22 : **personnes** : supprimer un compte membre n'efface jamais une personne (`creeParId` et `modifieParId` passent à vide) ; tuiles classées par nom puis prénom (elles n'affichent que l'année) ; initiales à la place de la photo jusqu'à l'étape 6. Dans les formulaires avec `useActionState`, garder `defaultValue` / `defaultChecked` : React remet le formulaire à ces valeurs après l'envoi (un bouton radio contrôlé par `useState` se décoche), et donner au `<select>` une `key` égale à sa valeur, sinon il se vide après une erreur.
 - 2026-11-22 : **date de naissance partielle** (choix d'Eric) : trois colonnes `jourNaissance`, `moisNaissance`, `anneeNaissance` plutôt qu'un champ date, pour ne jamais inventer un jour ou un mois inconnu. Pas de jour sans mois, pas de mois sans année, année à partir de 1000, ni date impossible ni date future (`erreurDateNaissance`, `lib/personnes.ts`). Avant 1583, une année sur quatre est bissextile (calendrier julien). Lieu de naissance en texte libre (150 caractères).
 - 2026-11-22 : **dessin de l'arbre fait maison**, sans nouvelle bibliothèque (plan validé par Eric).
+- 2026-11-22 : **liens de famille** (`lib/liens.ts`) : chaque modification passe par `avecVerrou()`, une transaction « tout ou rien » qui fait passer les modifications une par une, fusionne les familles aux mêmes parents, retire les familles devenues inutiles, puis refuse toute incohérence (être son propre ancêtre, couple entre un parent et son descendant). Les messages de règle passent par `ErreurLien`. Retirer un parent garde l'autre parent ; un couple avec enfants ne se retire pas directement ; **supprimer une personne est réservé aux administrateurs** (`exigerAdministrateur()`).
+- 2026-11-22 : la recherche d'une personne se fait en JavaScript (sans accents ni majuscules) : le filtre `contains` / `endsWith` de Prisma provoque ici une erreur de collation MySQL (`Illegal mix of collations`).
+- 2026-11-22 : **pour vérifier une mise en ligne, regarder l'adresse** : une fiche créée dans l'aperçu `localhost` va dans la base de développement, pas sur le site réel. Pour tester sans toucher à la session d'Eric dans l'aperçu, utiliser une copie de production (`next start`) sur `127.0.0.1` et un autre port : en mode `next dev`, l'adresse `127.0.0.1` ne charge pas le JavaScript des formulaires.
