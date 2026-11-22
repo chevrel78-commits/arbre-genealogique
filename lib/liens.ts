@@ -246,7 +246,7 @@ export async function retirerFrere(tx: Tx, sourceId: number, frereId: number) {
 // Lecture : les proches d'une personne
 // ---------------------------------------------------------------------------------------------------
 
-export const champsTuile = { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true } as const;
+export const champsTuile = { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, photo: true } as const;
 
 type Tuile = {
   id: number;
@@ -255,6 +255,7 @@ type Tuile = {
   nom: string;
   nomJeuneFille: string | null;
   anneeNaissance: number | null;
+  photo: string | null;
 };
 
 // Du plus âgé au plus jeune ; ceux dont l'année est inconnue à la fin.

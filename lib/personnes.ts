@@ -5,6 +5,7 @@ export const CIVILITES = { M: "M.", MME: "Mme", MLLE: "Mlle" } as const;
 export type CodeCivilite = keyof typeof CIVILITES;
 
 export const ANNEE_MINIMALE = 1000;
+export const TAILLE_PHOTO_MAX = 10 * 1024 * 1024; // 10 Mo
 
 export function estCivilite(valeur: string): valeur is CodeCivilite {
   return Object.hasOwn(CIVILITES, valeur);

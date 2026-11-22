@@ -31,7 +31,7 @@ async function Contenu({ recherche }: { recherche: Promise<Record<string, string
   const [personnes, familles, parametres] = await Promise.all([
     prisma.personne.findMany({
       orderBy: [{ nom: "asc" }, { prenom: "asc" }, { id: "asc" }],
-      select: { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, familleOrigineId: true },
+      select: { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, photo: true, familleOrigineId: true },
     }),
     prisma.famille.findMany({ select: { id: true, parent1Id: true, parent2Id: true, marie: true } }),
     recherche,

@@ -27,7 +27,7 @@ function TuileArbre({ noeud, estCentre }: { noeud: NoeudArbre; estCentre: boolea
         title={`Ouvrir la fiche de ${nomComplet}`}
         className="flex min-h-0 flex-1 flex-col items-center gap-0.5 px-2 pt-2 hover:bg-arbre-doux/50"
       >
-        <Portrait prenom={p.prenom} nom={p.nom} petit />
+        <Portrait prenom={p.prenom} nom={p.nom} photo={p.photo} petit />
         <span className="w-full truncate text-sm font-medium leading-tight">
           <span className="text-xs font-normal text-foreground/60">{CIVILITES[p.civilite]} </span>
           {p.prenom}
