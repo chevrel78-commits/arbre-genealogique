@@ -55,7 +55,9 @@ export async function enregistrerPhoto(fichier: File, recadrage?: Recadrage): Pr
     ]);
   } catch (e) {
     if (e instanceof PhotoInvalide) throw e;
-    throw new PhotoInvalide("Ce fichier n'est pas une image lisible.");
+    // La vraie cause reste visible dans le journal du serveur (image abîmée, mémoire insuffisante…).
+    console.error("Photo non traitée :", e);
+    throw new PhotoInvalide("Cette image n'a pas pu être traitée. Essayez avec une autre photo.");
   }
 
   const identifiant = randomUUID();
