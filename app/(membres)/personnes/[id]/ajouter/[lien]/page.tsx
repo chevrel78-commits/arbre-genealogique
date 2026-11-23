@@ -6,7 +6,8 @@ import type { OptionsFormulaireLien } from "../../../champs-lien";
 import { FormulairePersonne } from "../../../formulaire";
 import { FormulaireRelier } from "../../../formulaire-relier";
 import { ajouterNouveauProche } from "../../../liens-actions";
-import { classeChamp } from "@/components/formulaire";
+import { OngletsAjout } from "../../../onglets-ajout";
+import { RecherchePersonne } from "../../../recherche-personne";
 import { exigerMembre } from "@/lib/acces";
 import type { ValeursPersonne } from "@/lib/formulaire-personne";
 import { chargerProches, chercherCandidats } from "@/lib/liens";
@@ -96,32 +97,9 @@ async function Contenu({
       {dejaRenseigne ? (
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">Ce parent est déjà renseigné sur la fiche.</p>
       ) : (
-        <>
-          <section className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <h2 className="text-lg font-semibold">Une personne déjà dans l&apos;arbre</h2>
-            <form method="get" className="flex gap-2">
-              <input
-                type="search"
-                name="q"
-                defaultValue={texteRecherche}
-                maxLength={100}
-                aria-label="Rechercher par nom"
-                placeholder="Rechercher par nom ou prénom"
-                className={`${classeChamp} min-w-0 flex-1`}
-              />
-              <button type="submit" className="rounded-lg border border-black/15 px-4 py-2 text-sm hover:bg-black/5">
-                Rechercher
-              </button>
-            </form>
-            {candidats.length === 0 ? (
-              <p className="text-sm text-foreground/60">Aucune personne à proposer.</p>
-            ) : (
-              <FormulaireRelier sourceId={id} lien={lien} candidats={candidats} options={options} />
-            )}
-          </section>
-
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Ou une nouvelle personne</h2>
+        <OngletsAjout
+          ouvrirExistante={typeof q === "string"}
+          nouvelle={
             <FormulairePersonne
               initiales={valeursInitiales(lien, source, proches)}
               actionServeur={ajouterNouveauProche}
@@ -129,8 +107,17 @@ async function Contenu({
               optionsLien={options}
               retour={retour}
             />
-          </section>
-        </>
+          }
+          existante={
+            <RecherchePersonne texte={texteRecherche}>
+              {candidats.length === 0 ? (
+                <p className="text-sm text-foreground/60">Aucune personne à proposer.</p>
+              ) : (
+                <FormulaireRelier sourceId={id} lien={lien} candidats={candidats} options={options} />
+              )}
+            </RecherchePersonne>
+          }
+        />
       )}
     </>
   );

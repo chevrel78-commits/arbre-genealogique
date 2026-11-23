@@ -4,9 +4,12 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 const CADRE = 256;
+const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4;
 
-export type ZoneRecadrage = { x: number; y: number; cote: number };
+// Zone carrée en fractions de l'image. Avec une photo réduite, elle dépasse de l'image (x ou y négatifs,
+// cote au-delà de 1) : l'espace autour est rempli en blanc.
+export type ZoneRecadrage = { x: number; y: number; cote: number; reduite: boolean };
 
 export function RecadragePhoto({
   url,
@@ -29,10 +32,9 @@ export function RecadragePhoto({
   const borner = (p: { x: number; y: number }, z: number, d = dimensions) => {
     if (!d) return p;
     const e = echelleDe(z, d);
-    return {
-      x: Math.min(0, Math.max(CADRE - d.l * e, p.x)),
-      y: Math.min(0, Math.max(CADRE - d.h * e, p.y)),
-    };
+    // Plus grande que le cadre, la photo le couvre toujours ; plus petite, elle reste à l'intérieur.
+    const limiter = (valeur: number, taille: number) => Math.min(Math.max(0, CADRE - taille), Math.max(Math.min(0, CADRE - taille), valeur));
+    return { x: limiter(p.x, d.l * e), y: limiter(p.y, d.h * e) };
   };
 
   const changerZoom = (nouveau: number) => {
@@ -67,9 +69,10 @@ export function RecadragePhoto({
     if (!dimensions) return;
     const e = echelleDe(zoom);
     onValider({
-      x: Math.max(0, -position.x / e / dimensions.l),
-      y: Math.max(0, -position.y / e / dimensions.h),
-      cote: Math.min(1, CADRE / e / dimensions.l),
+      x: -position.x / e / dimensions.l,
+      y: -position.y / e / dimensions.h,
+      cote: CADRE / e / dimensions.l,
+      reduite: zoom < 1,
     });
   };
 
@@ -87,7 +90,7 @@ export function RecadragePhoto({
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white p-5 shadow-xl">
         <div>
           <h2 className="text-lg font-semibold">Recadrer la photo</h2>
-          <p className="text-sm text-foreground/70">Faites glisser la photo et utilisez le curseur pour l&apos;agrandir.</p>
+          <p className="text-sm text-foreground/70">Faites glisser la photo. Le curseur l&apos;agrandit ou la réduit : l&apos;espace autour sera blanc.</p>
         </div>
 
         <div
@@ -99,7 +102,7 @@ export function RecadragePhoto({
           onPointerUp={fin}
           onPointerCancel={fin}
           onKeyDown={clavier}
-          className="relative mx-auto cursor-move touch-none select-none overflow-hidden rounded-lg bg-black/10 outline-offset-2 outline-arbre focus-visible:outline-2"
+          className="relative mx-auto cursor-move touch-none select-none overflow-hidden rounded-lg bg-white ring-1 ring-black/15 outline-offset-2 outline-arbre focus-visible:outline-2"
           style={{ width: CADRE, height: CADRE }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -130,7 +133,7 @@ export function RecadragePhoto({
           Zoom
           <input
             type="range"
-            min={1}
+            min={ZOOM_MIN}
             max={ZOOM_MAX}
             step={0.01}
             value={zoom}

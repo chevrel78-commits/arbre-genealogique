@@ -18,20 +18,19 @@ async function preparerImage(url: string, zone: ZoneRecadrage): Promise<Blob | n
   await image.decode();
   const l = image.naturalWidth;
   const h = image.naturalHeight;
-  const cote = Math.max(1, Math.min(Math.round(zone.cote * l), l, h));
-  const x = Math.max(0, Math.min(Math.round(zone.x * l), l - cote));
-  const y = Math.max(0, Math.min(Math.round(zone.y * h), h - cote));
-  const sortie = Math.min(COTE_ENVOI, cote);
+  const cote = zone.cote * l; // côté du carré, en pixels de la photo (plus grand que la photo si elle est réduite)
+  const sortie = Math.max(1, Math.round(Math.min(COTE_ENVOI, cote)));
+  const echelle = sortie / cote;
 
   const toile = document.createElement("canvas");
   toile.width = sortie;
   toile.height = sortie;
   const contexte = toile.getContext("2d");
   if (!contexte) return null;
-  contexte.fillStyle = "#fff"; // fond blanc pour les images PNG transparentes
+  contexte.fillStyle = "#fff"; // fond blanc : autour d'une photo réduite et sous les PNG transparents
   contexte.fillRect(0, 0, sortie, sortie);
   contexte.imageSmoothingQuality = "high";
-  contexte.drawImage(image, x, y, cote, cote, 0, 0, sortie, sortie);
+  contexte.drawImage(image, -zone.x * l * echelle, -zone.y * h * echelle, l * echelle, h * echelle);
   return new Promise((resoudre) => toile.toBlob(resoudre, "image/jpeg", 0.92));
 }
 
@@ -58,13 +57,16 @@ export function FormulairePhoto({ id, aUnePhoto, nom }: { id: number; aUnePhoto:
         donnees.set("id", String(id));
         const image = await preparerImage(url, zone).catch(() => null);
         if (image) donnees.set("photo", new File([image], "photo.jpg", { type: "image/jpeg" }));
-        else if (original) {
+        else if (zone.reduite) {
+          setErreur("Cette photo est trop grande pour être réduite ici. Essayez à 100 % ou avec une image plus légère.");
+          return;
+        } else if (original) {
           // Solution de secours : le serveur fait lui-même le recadrage. Le fichier est renommé, car un nom
           // avec espaces ou accents fait échouer l'envoi sur l'hébergement.
           donnees.set("photo", new File([original], "photo", { type: original.type }));
-          donnees.set("recadrageX", String(zone.x));
-          donnees.set("recadrageY", String(zone.y));
-          donnees.set("recadrageCote", String(zone.cote));
+          donnees.set("recadrageX", String(Math.max(0, zone.x)));
+          donnees.set("recadrageY", String(Math.max(0, zone.y)));
+          donnees.set("recadrageCote", String(Math.min(1, zone.cote)));
         } else {
           setErreur("Choisissez une photo.");
           return;

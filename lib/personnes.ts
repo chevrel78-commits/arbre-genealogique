@@ -42,21 +42,46 @@ function joursDuMois(mois: number, annee: number) {
 
 export type DatePartielle = { jour: number | null; mois: number | null; annee: number | null };
 
-// Vérifie une date de naissance partielle : renvoie le message d'erreur, ou null si elle est correcte.
-export function erreurDateNaissance({ jour, mois, annee }: DatePartielle, aujourdhui: { jour: number; mois: number; annee: number }) {
-  if (jour !== null && mois === null) return "Indiquez le mois si vous connaissez le jour.";
-  if (mois !== null && annee === null) return "Indiquez l'année si vous connaissez le mois.";
+type Aujourdhui = { jour: number; mois: number; annee: number };
+
+// Vérifie une date partielle : renvoie le message d'erreur, ou null si elle est correcte.
+function erreurDate({ jour, mois, annee }: DatePartielle, aujourdhui: Aujourdhui, quoi: "naissance" | "décès") {
+  if (jour !== null && mois === null) return `Date de ${quoi} : indiquez le mois si vous connaissez le jour.`;
+  if (mois !== null && annee === null) return `Date de ${quoi} : indiquez l'année si vous connaissez le mois.`;
   if (annee === null) return null;
   if (annee < ANNEE_MINIMALE || annee > aujourdhui.annee)
-    return `L'année de naissance doit être comprise entre ${ANNEE_MINIMALE} et ${aujourdhui.annee}.`;
+    return `L'année de ${quoi} doit être comprise entre ${ANNEE_MINIMALE} et ${aujourdhui.annee}.`;
   if (mois === null) return null;
-  if (mois < 1 || mois > 12) return "Le mois de naissance est invalide.";
-  if (annee === aujourdhui.annee && mois > aujourdhui.mois) return "La date de naissance ne peut pas être dans le futur.";
+  if (mois < 1 || mois > 12) return `Le mois de ${quoi} est invalide.`;
+  if (annee === aujourdhui.annee && mois > aujourdhui.mois) return `La date de ${quoi} ne peut pas être dans le futur.`;
   if (jour === null) return null;
   if (jour < 1 || jour > joursDuMois(mois, annee)) return `Cette date n'existe pas : ${MOIS[mois - 1]} ${annee} n'a pas de jour ${jour}.`;
   if (annee === aujourdhui.annee && mois === aujourdhui.mois && jour > aujourdhui.jour)
-    return "La date de naissance ne peut pas être dans le futur.";
+    return `La date de ${quoi} ne peut pas être dans le futur.`;
   return null;
+}
+
+export const erreurDateNaissance = (date: DatePartielle, aujourdhui: Aujourdhui) => erreurDate(date, aujourdhui, "naissance");
+
+// Le décès ne peut pas précéder la naissance. Avec des dates partielles, on compare seulement ce qui est connu.
+export function erreurDateDeces(deces: DatePartielle, naissance: DatePartielle, aujourdhui: Aujourdhui) {
+  const erreur = erreurDate(deces, aujourdhui, "décès");
+  if (erreur) return erreur;
+  const avant = "Le décès ne peut pas être antérieur à la naissance.";
+  if (deces.annee === null || naissance.annee === null) return null;
+  if (deces.annee !== naissance.annee) return deces.annee < naissance.annee ? avant : null;
+  if (deces.mois === null || naissance.mois === null) return null;
+  if (deces.mois !== naissance.mois) return deces.mois < naissance.mois ? avant : null;
+  if (deces.jour === null || naissance.jour === null) return null;
+  return deces.jour < naissance.jour ? avant : null;
+}
+
+// « le 1er mars 1950 », « en mars 1950 », « en 1950 », ou rien si l'année est inconnue.
+function dateEnTexte({ jour, mois, annee }: DatePartielle) {
+  if (annee === null) return "";
+  if (mois === null) return `en ${annee}`;
+  if (jour === null) return `en ${MOIS[mois - 1]} ${annee}`;
+  return `le ${jour === 1 ? "1er" : jour} ${MOIS[mois - 1]} ${annee}`;
 }
 
 // Phrase de la fiche : « Née le 12 mars 1950 à Lyon », « Né en 1920 », « Née à Lyon »…
@@ -69,13 +94,29 @@ export function phraseNaissance(p: {
 }) {
   const { jourNaissance: jour, moisNaissance: mois, anneeNaissance: annee, lieuNaissance: lieu } = p;
   if (annee === null && !lieu) return "Date de naissance inconnue";
-  let date = "";
-  if (annee !== null) {
-    if (mois === null) date = `en ${annee}`;
-    else if (jour === null) date = `en ${MOIS[mois - 1]} ${annee}`;
-    else date = `le ${jour === 1 ? "1er" : jour} ${MOIS[mois - 1]} ${annee}`;
-  }
+  const date = dateEnTexte({ jour, mois, annee });
   return [p.civilite === "M" ? "Né" : "Née", date, lieu ? `à ${lieu}` : ""].filter(Boolean).join(" ");
+}
+
+// « Décédée le 3 mai 2010 », « Décédé » si la date est inconnue, ou null pour une personne en vie.
+export function phraseDeces(p: {
+  civilite: CodeCivilite;
+  decede: boolean;
+  jourDeces: number | null;
+  moisDeces: number | null;
+  anneeDeces: number | null;
+}) {
+  if (!p.decede) return null;
+  const date = dateEnTexte({ jour: p.jourDeces, mois: p.moisDeces, annee: p.anneeDeces });
+  return [p.civilite === "M" ? "Décédé" : "Décédée", date].filter(Boolean).join(" ");
+}
+
+// Sur les tuiles : « 1950 », « 1950 – 2010 », « 1950 † » (décès sans date), « † 2010 » ou « † ».
+export function anneesDeVie(p: { anneeNaissance: number | null; decede: boolean; anneeDeces: number | null }) {
+  if (!p.decede) return p.anneeNaissance === null ? null : String(p.anneeNaissance);
+  if (p.anneeNaissance !== null && p.anneeDeces !== null) return `${p.anneeNaissance} – ${p.anneeDeces}`;
+  if (p.anneeNaissance !== null) return `${p.anneeNaissance} †`;
+  return p.anneeDeces !== null ? `† ${p.anneeDeces}` : "†";
 }
 
 // Les six liens que l'on peut ajouter depuis une fiche.

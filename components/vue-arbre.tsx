@@ -13,7 +13,7 @@ import {
   type PersonneArbre,
   type ReglagesAffichage,
 } from "@/lib/disposition-arbre";
-import { CIVILITES } from "@/lib/personnes";
+import { anneesDeVie, CIVILITES } from "@/lib/personnes";
 
 const ZOOM_MIN = 0.15;
 const ZOOM_MAX = 1.25;
@@ -99,7 +99,7 @@ function TuileArbre({
           {p.prenom}
         </span>
         <span className="w-full truncate text-sm font-semibold leading-tight">{p.nom}</span>
-        {p.anneeNaissance !== null && <span className="text-xs leading-tight text-foreground/60">{p.anneeNaissance}</span>}
+        {anneesDeVie(p) && <span className="text-xs leading-tight text-foreground/60">{anneesDeVie(p)}</span>}
       </Link>
       <div className="flex border-t border-black/5 text-xs">
         {estCentre ? (

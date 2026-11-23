@@ -246,7 +246,7 @@ export async function retirerFrere(tx: Tx, sourceId: number, frereId: number) {
 // Lecture : les proches d'une personne
 // ---------------------------------------------------------------------------------------------------
 
-export const champsTuile = { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, photo: true } as const;
+export const champsTuile = { id: true, civilite: true, prenom: true, nom: true, nomJeuneFille: true, anneeNaissance: true, decede: true, anneeDeces: true, photo: true } as const;
 
 type Tuile = {
   id: number;
@@ -255,6 +255,8 @@ type Tuile = {
   nom: string;
   nomJeuneFille: string | null;
   anneeNaissance: number | null;
+  decede: boolean;
+  anneeDeces: number | null;
   photo: string | null;
 };
 
@@ -302,7 +304,7 @@ export async function chargerProches(id: number) {
 // Personnes de l'arbre que l'on peut relier : la recherche ignore les accents et les majuscules.
 const normaliser = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
-export async function chercherCandidats(lien: TypeLien, exclus: Set<number>, recherche: string) {
+export async function chercherCandidats(lien: TypeLien | null, exclus: Set<number>, recherche: string) {
   const personnes = await prisma.personne.findMany({ select: champsTuile, orderBy: [{ nom: "asc" }, { prenom: "asc" }, { id: "asc" }] });
   const mots = normaliser(recherche).split(/\s+/).filter(Boolean);
   return personnes
