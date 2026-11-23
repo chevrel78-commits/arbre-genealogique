@@ -72,6 +72,7 @@ model Membre {
   valides   Membre[]        @relation("Validation")
   sessions  SessionMembre[]
   jetons    JetonEmail[]
+  connexions ConnexionMembre[]
 
   personnesCreees    Personne[] @relation("PersonneCreeePar")
   personnesModifiees Personne[] @relation("PersonneModifieePar")
@@ -95,6 +96,19 @@ model SessionMembre {
 
   @@index([membreId])
   @@index([expireLe])
+}
+
+// Historique des connexions réussies, pour le tableau de bord des administrateurs. Une session ne suffit
+// pas : elle disparaît à la déconnexion. Ni adresse IP ni appareil ; effacé au bout de 6 mois (lib/session.ts).
+model ConnexionMembre {
+  id       Int      @id @default(autoincrement())
+  membreId Int
+  creeLe   DateTime @default(now())
+
+  membre Membre @relation(fields: [membreId], references: [id], onDelete: Cascade)
+
+  @@index([creeLe])
+  @@index([membreId])
 }
 
 // ---------------------------------------------------------------------------------------------------

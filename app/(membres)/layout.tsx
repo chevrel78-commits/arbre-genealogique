@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { LienSupport } from "@/components/lien-support";
 import { membreDeLaSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { seDeconnecter } from "../actions-session";
@@ -15,6 +16,19 @@ async function MembreConnecte() {
   const enAttente = estAdmin ? await prisma.membre.count({ where: { statut: "EN_ATTENTE" } }) : 0;
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
+      <Link href="/activite" prefetch={false} className="rounded-lg px-3 py-1 font-medium text-arbre hover:bg-arbre-doux">
+        Activité
+      </Link>
+      <Link
+        href="/aide"
+        prefetch={false}
+        title="Aide"
+        aria-label="Aide"
+        className="flex h-7 w-7 items-center justify-center rounded-full border border-arbre/40 font-semibold text-arbre hover:bg-arbre-doux"
+      >
+        ?
+      </Link>
+      <LienSupport compact />
       {estAdmin && (
         <Link href="/admin" className="rounded-lg px-3 py-1 font-medium text-arbre hover:bg-arbre-doux">
           Administration

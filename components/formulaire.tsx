@@ -1,5 +1,6 @@
 // Petits éléments communs aux formulaires du site (même apparence partout).
 import type { ComponentProps, ReactNode } from "react";
+import { LienSupport } from "./lien-support";
 
 export const classeChamp = "rounded-lg border border-black/15 px-3 py-2 text-base font-normal outline-arbre";
 
@@ -53,6 +54,10 @@ export function PagePublique({ titre, sousTitre, children }: { titre: string; so
         {sousTitre && <p className="mt-1 max-w-sm text-foreground/70">{sousTitre}</p>}
       </div>
       {children}
+      <p className="flex flex-col items-center gap-1 text-sm text-foreground/70">
+        Un problème pour entrer sur le site ?
+        <LienSupport />
+      </p>
     </main>
   );
 }

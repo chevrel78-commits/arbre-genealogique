@@ -58,6 +58,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - `Personne.familleOrigineId` : la famille dont la personne est l'enfant.
 - `Photo` : photo de galerie, indépendante du portrait `Personne.photo` : `fichier`, `largeur`, `hauteur`, `legende`, `jourPrise`, `moisPrise`, `anneePrise`, `lieu`, `ajouteeParId`.
 - `IdentificationPhoto` : une personne sur une photo (une seule fois par photo), avec un repère facultatif `x`, `y` en fractions de l'image.
+- `ConnexionMembre` : historique des connexions réussies (`membreId`, date), gardé 6 mois.
 
 **Pourquoi une table `Famille` plutôt que `pereId` / `mereId` ?** Parce qu'une seule règle répond à toutes les demandes :
 - **conjoint** = l'autre parent d'une même famille (les époux s'affichent côte à côte) ;
@@ -72,7 +73,7 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - `npx prisma generate` : régénérer le client après un changement de schéma, **puis relancer `npm run dev`**.
 - `npx prisma studio` : explorer la base dans le navigateur.
 - `npm run creer-admin` : créer (ou remettre en état : nouveau mot de passe) le compte du super-administrateur dans la base de `DATABASE_URL`. Le mot de passe se tape dans le terminal, sans s'afficher, et ne passe jamais par Claude.
-- `npm run build` (lancé par Hostinger à chaque push) : `prisma migrate deploy` puis `next build --webpack`.
+- `npm run build` (lancé par Hostinger à chaque push) : copie du guide dans le code, `prisma migrate deploy`, puis `next build --webpack`.
 
 ## Hébergement (contraintes reprises de Palmares et Objectif)
 
@@ -114,9 +115,12 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - [x] Compléments (2026-11-22) : statut Mariés / En couple / Divorcés (migration `divorce`), recadrage et zoom à l'ajout d'une photo, repli des branches, bouton « Masquer la belle-famille » ; onglets « Nouvelle personne » / « Personne existante », champs Information et Décès (migration `deces_information`), photo réductible jusqu'à 25 %
 - [x] Navigation dans l'arbre (2026-11-23) : bouton « Plein écran », déplacement à la souris (curseur main), vue « Parents et enfants » ; aucune migration
 - [x] Galerie de photos (2026-11-23) : plusieurs photos par personne, date et lieu lus dans le fichier, identification par repère sur le visage, photo visible dans la galerie de chaque personne identifiée (migration `galerie_photos`, dépendance `exifr`)
+- [x] Activité, support et aide (2026-11-23) : page `/activite` (chiffres, derniers ajouts, connexions pour les administrateurs), lien support à icône enveloppe, page `/aide` tirée du guide (migration `connexions_membres`)
 
 ## Décisions
 
+- 2026-11-23 : **tableau de bord** (plan validé par Eric ; `app/(membres)/activite/page.tsx`) : ouvert à tous les membres, mais les **dernières connexions ne sont lues que pour un administrateur**. Table `ConnexionMembre` (membre et date, sans IP ni appareil), remplie par `ouvrirSession()`, purgée à 6 mois ; un échec d'écriture ne bloque jamais la connexion. Le fil se calcule à partir des dates existantes : pas de journal, donc un élément supprimé en disparaît. L'identification automatique faite à l'ajout d'une photo n'y figure pas en double.
+- 2026-11-23 : **support et aide** : `support@altea.website` (`components/lien-support.tsx`) dans le bandeau et sur les pages publiques. `/aide` affiche `docs/guide-utilisation.md`, **seul texte à tenir à jour** : `scripts/generer-guide.mjs` le copie dans `generated/guide.ts` (hors Git) au lancement de `npm run dev` et de `npm run build`, pour ne pas dépendre du dossier `docs/` sur le serveur ; relancer `npm run dev` pour voir un changement du guide. `lib/guide.ts` ne comprend que titres `##`, paragraphes, listes et gras. La rubrique « Pour les administrateurs » n'est envoyée qu'aux administrateurs.
 - 2026-11-23 : **galerie de photos** (plan validé par Eric ; `app/(membres)/personnes/galerie.tsx` et `galerie-actions.ts`) : rubrique « Photos » juste après le bloc d'identité. Tout membre ajoute ou retire une identification ; seul l'auteur de l'ajout ou un administrateur supprime une photo. La dernière identification ne se retire pas (la photo ne serait plus dans aucune galerie) ; supprimer une personne efface les photos où elle était seule identifiée. « Utiliser comme portrait » crée une **copie** recadrée : le portrait survit à la suppression de la photo. Images de 1600 px au plus, envoyées une par une sous un nom neutre. **Aucun rond ni marque sur un visage identifié ; le prénom et le nom n'apparaissent qu'au survol** (demandes d'Eric) : le visage le plus proche de la souris est calculé sans zone posée sur l'image, pour qu'un clic continue de placer un repère ; sans souris (téléphone, tablette), les noms restent affichés.
 - 2026-11-23 : **date et lieu des photos** : `exifr` (choix d'Eric) lit les données du fichier **dans le navigateur, avant la réduction**, qui les efface ; le fichier conservé reste sans métadonnées. Le GPS est converti en nom de commune par **OpenStreetMap Nominatim** (choix d'Eric) : seules des coordonnées arrondies à 2 décimales (environ 1 km) quittent le site, sans photo ni nom ; la base ne garde que le nom du lieu, jamais la position.
 
