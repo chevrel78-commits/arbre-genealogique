@@ -6,7 +6,7 @@ import { relierProche } from "./liens-actions";
 import { Erreur } from "@/components/formulaire";
 import { Portrait, type PersonneTuile } from "@/components/tuile-personne";
 import type { EtatPersonne } from "@/lib/formulaire-personne";
-import { accordNe, CIVILITES } from "@/lib/personnes";
+import { accordNe, anneesDeVie, CIVILITES } from "@/lib/personnes";
 
 export function FormulaireRelier({
   sourceId,
@@ -37,9 +37,9 @@ export function FormulaireRelier({
                 <span className="block break-words font-medium">
                   {CIVILITES[c.civilite]} {c.prenom} {c.nom}
                 </span>
-                {(c.nomJeuneFille || c.anneeNaissance !== null) && (
+                {(c.nomJeuneFille || anneesDeVie(c)) && (
                   <span className="block text-xs text-foreground/60">
-                    {[c.nomJeuneFille && `${accordNe(c.civilite)} ${c.nomJeuneFille}`, c.anneeNaissance].filter(Boolean).join(" · ")}
+                    {[c.nomJeuneFille && `${accordNe(c.civilite)} ${c.nomJeuneFille}`, anneesDeVie(c)].filter(Boolean).join(" · ")}
                   </span>
                 )}
               </span>

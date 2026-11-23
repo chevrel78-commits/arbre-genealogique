@@ -11,7 +11,7 @@ import { Portrait, TuilePersonne, type PersonneTuile } from "@/components/tuile-
 import { exigerMembre } from "@/lib/acces";
 import { chargerProches } from "@/lib/liens";
 import { COOKIE_INFO_FICHE } from "@/lib/messages-fiche";
-import { accordNe, CIVILITES, identifiantValide, LIENS, phraseNaissance, type TypeLien } from "@/lib/personnes";
+import { accordNe, CIVILITES, identifiantValide, LIENS, phraseDeces, phraseNaissance, type TypeLien } from "@/lib/personnes";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "Fiche · Arbre généalogique" };
@@ -128,8 +128,16 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
               </p>
             )}
             <p className="break-words text-foreground/70">{phraseNaissance(p)}</p>
+            {p.decede && <p className="break-words text-foreground/70">{phraseDeces(p)}</p>}
           </div>
         </div>
+
+        {p.information && (
+          <section className="rounded-lg bg-background px-4 py-3">
+            <h2 className="mb-1 text-sm font-semibold">Information</h2>
+            <p className="whitespace-pre-line break-words text-sm text-foreground/80">{p.information}</p>
+          </section>
+        )}
 
         <FormulairePhoto id={p.id} aUnePhoto={p.photo !== null} nom={sourceNom} />
 

@@ -27,6 +27,11 @@ async function Contenu({ parametres }: { parametres: Promise<{ id: string }> }) 
         moisNaissance: p.moisNaissance?.toString() ?? "",
         anneeNaissance: p.anneeNaissance?.toString() ?? "",
         lieuNaissance: p.lieuNaissance ?? "",
+        decede: p.decede ? "on" : "",
+        jourDeces: p.jourDeces?.toString() ?? "",
+        moisDeces: p.moisDeces?.toString() ?? "",
+        anneeDeces: p.anneeDeces?.toString() ?? "",
+        information: p.information ?? "",
       }}
     />
   );

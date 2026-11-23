@@ -1,6 +1,6 @@
 // Portrait (photo, ou initiales à défaut) et tuile cliquable d'une personne.
 import Link from "next/link";
-import { accordNe, CIVILITES, type CodeCivilite } from "@/lib/personnes";
+import { accordNe, anneesDeVie, CIVILITES, type CodeCivilite } from "@/lib/personnes";
 
 export type PersonneTuile = {
   id: number;
@@ -9,6 +9,8 @@ export type PersonneTuile = {
   nom: string;
   nomJeuneFille: string | null;
   anneeNaissance: number | null;
+  decede: boolean;
+  anneeDeces: number | null;
   photo: string | null;
 };
 
@@ -62,7 +64,7 @@ export function TuilePersonne({ personne: p }: { personne: PersonneTuile }) {
             {accordNe(p.civilite)} {p.nomJeuneFille}
           </span>
         )}
-        {p.anneeNaissance !== null && <span className="mt-1 block text-xs text-foreground/60">{p.anneeNaissance}</span>}
+        {anneesDeVie(p) && <span className="mt-1 block text-xs text-foreground/60">{anneesDeVie(p)}</span>}
       </span>
     </Link>
   );

@@ -117,6 +117,12 @@ model Personne {
   moisNaissance    Int?     @db.TinyInt
   anneeNaissance   Int?     @db.SmallInt
   lieuNaissance    String?  @db.VarChar(150)
+  // Décès : la case suffit si la date est inconnue ; la date peut être partielle, comme la naissance.
+  decede           Boolean  @default(false)
+  jourDeces        Int?     @db.TinyInt
+  moisDeces        Int?     @db.TinyInt
+  anneeDeces       Int?     @db.SmallInt
+  information      String?  @db.Text // texte libre : métier, anecdote, souvenir…
   photo            String?  @db.VarChar(255) // utilisée à l'étape 6
   familleOrigineId Int? // la famille dont elle est l'enfant
   creeParId        Int?

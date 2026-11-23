@@ -74,7 +74,7 @@ prénom. Cliquez sur une tuile pour ouvrir la **fiche** de la personne. Pour rev
 
 1. Sur l'accueil, cliquez sur **« Ajouter une personne »**.
 2. Choisissez la **civilité** (M., Mme ou Mlle), puis indiquez le **prénom** et le **nom**.
-3. Si vous les connaissez, ajoutez le **nom de jeune fille**, la **date de naissance** et le **lieu
+3. Si vous les connaissez, ajoutez le **nom de jeune fille**, la **date de naissance**, une **information** libre (métier, souvenir…), la case **Décédé(e)** avec la **date du décès**, et le **lieu
    de naissance** (par exemple « Lyon (Rhône) »).
 4. Cliquez sur **« Enregistrer »** : la fiche de la personne s'affiche.
 
@@ -82,10 +82,14 @@ prénom. Cliquez sur une tuile pour ouvrir la **fiche** de la personne. Pour rev
 et l'année**. N'inventez pas de jour : la fiche affichera par exemple « Née en mars 1950 ». Le site
 refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une date future.
 
+**Personne décédée** : cochez **Décédé(e)**, même si la date est inconnue. La date peut être complète ou partielle, mais ni future ni antérieure à la naissance. Les tuiles affichent alors par exemple « 1950 – 2010 », ou « † » sans date. Pour annuler un décès saisi par erreur, décochez la case **et** videz la date : tant qu'une date reste indiquée, la personne est considérée comme décédée.
+
+**Depuis l'accueil**, l'onglet **« Personne existante »** de « Ajouter une personne » permet de vérifier qu'une personne n'existe pas déjà et d'ouvrir sa fiche.
+
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la avec le curseur **Zoom**, puis cliquez sur **« Valider »**. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
+**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la ou réduisez-la avec le curseur **Zoom** (de 25 % à 400 %, l'espace autour d'une photo réduite est blanc), puis cliquez sur **« Valider »**. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
 Les photos ne sont visibles que par les membres connectés. Le lieu de prise de vue et les autres informations cachées dans le fichier sont supprimés à l'envoi. Sans photo, la personne apparaît avec ses initiales.
 
 ## Les liens de famille
@@ -97,9 +101,9 @@ La fiche d'une personne présente ses **parents**, ses **conjoints**, ses **frè
 
 1. Sur la fiche, cliquez sur **+ Père**, **+ Mère**, **+ Frère**, **+ Sœur**, **+ Enfant** ou
    **+ Conjoint**.
-2. Si la personne est **déjà dans l'arbre**, recherchez son nom et cliquez sur **« Relier »**. Pensez-y
+2. Si la personne est **déjà dans l'arbre**, ouvrez l'onglet **« Personne existante »**, recherchez son nom et cliquez sur **« Relier »**. Pensez-y
    d'abord : cela évite de créer la même personne deux fois.
-3. Sinon, remplissez le formulaire **« Ou une nouvelle personne »** et cliquez sur **« Enregistrer »**.
+3. Sinon, remplissez l'onglet **« Nouvelle personne »** et cliquez sur **« Enregistrer »**.
    La civilité et le nom de famille sont proposés quand c'est possible : vérifiez-les.
 
 **Bon à savoir**
