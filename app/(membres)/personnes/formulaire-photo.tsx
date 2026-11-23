@@ -12,7 +12,7 @@ const bouton = "inline-block cursor-pointer rounded-lg border border-arbre px-3 
 const COTE_ENVOI = 1600;
 
 // Découpe la zone choisie et la réduit. Renvoie null si le navigateur n'y arrive pas (image trop grande).
-async function preparerImage(url: string, zone: ZoneRecadrage): Promise<Blob | null> {
+export async function preparerImage(url: string, zone: ZoneRecadrage): Promise<Blob | null> {
   const image = new Image();
   image.src = url;
   await image.decode();
@@ -88,7 +88,7 @@ export function FormulairePhoto({ id, aUnePhoto, nom }: { id: number; aUnePhoto:
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <label className={`${bouton} ${enCours ? "pointer-events-none opacity-60" : ""} has-focus-visible:outline-2 has-focus-visible:outline-arbre`}>
-          {enCours ? "Envoi de la photo…" : aUnePhoto ? "Remplacer la photo" : "Ajouter une photo"}
+          {enCours ? "Envoi du portrait…" : aUnePhoto ? "Remplacer le portrait" : "Ajouter un portrait"}
           <input
             ref={champFichier}
             type="file"
@@ -111,8 +111,8 @@ export function FormulairePhoto({ id, aUnePhoto, nom }: { id: number; aUnePhoto:
         {aUnePhoto && (
           <form action={retirerPhoto}>
             <input type="hidden" name="id" value={id} />
-            <BoutonConfirme message={`Retirer la photo de ${nom} ? Elle sera définitivement effacée.`} className="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-              Retirer la photo
+            <BoutonConfirme message={`Retirer le portrait de ${nom} ? Il sera définitivement effacé. Les photos de la galerie ne changent pas.`} className="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
+              Retirer le portrait
             </BoutonConfirme>
           </form>
         )}

@@ -45,7 +45,7 @@ export type DatePartielle = { jour: number | null; mois: number | null; annee: n
 type Aujourdhui = { jour: number; mois: number; annee: number };
 
 // Vérifie une date partielle : renvoie le message d'erreur, ou null si elle est correcte.
-function erreurDate({ jour, mois, annee }: DatePartielle, aujourdhui: Aujourdhui, quoi: "naissance" | "décès") {
+function erreurDate({ jour, mois, annee }: DatePartielle, aujourdhui: Aujourdhui, quoi: "naissance" | "décès" | "prise de vue") {
   if (jour !== null && mois === null) return `Date de ${quoi} : indiquez le mois si vous connaissez le jour.`;
   if (mois !== null && annee === null) return `Date de ${quoi} : indiquez l'année si vous connaissez le mois.`;
   if (annee === null) return null;
@@ -62,6 +62,7 @@ function erreurDate({ jour, mois, annee }: DatePartielle, aujourdhui: Aujourdhui
 }
 
 export const erreurDateNaissance = (date: DatePartielle, aujourdhui: Aujourdhui) => erreurDate(date, aujourdhui, "naissance");
+export const erreurDatePrise = (date: DatePartielle, aujourdhui: Aujourdhui) => erreurDate(date, aujourdhui, "prise de vue");
 
 // Le décès ne peut pas précéder la naissance. Avec des dates partielles, on compare seulement ce qui est connu.
 export function erreurDateDeces(deces: DatePartielle, naissance: DatePartielle, aujourdhui: Aujourdhui) {
@@ -109,6 +110,13 @@ export function phraseDeces(p: {
   if (!p.decede) return null;
   const date = dateEnTexte({ jour: p.jourDeces, mois: p.moisDeces, annee: p.anneeDeces });
   return [p.civilite === "M" ? "Décédé" : "Décédée", date].filter(Boolean).join(" ");
+}
+
+// Sous une photo : « Prise le 3 mai 1962 à Lyon », « Prise en 1962 », « Prise à Lyon », ou null.
+export function phrasePrise(p: { jourPrise: number | null; moisPrise: number | null; anneePrise: number | null; lieu: string | null }) {
+  const date = dateEnTexte({ jour: p.jourPrise, mois: p.moisPrise, annee: p.anneePrise });
+  if (!date && !p.lieu) return null;
+  return ["Prise", date, p.lieu ? `à ${p.lieu}` : ""].filter(Boolean).join(" ");
 }
 
 // Sur les tuiles : « 1950 », « 1950 – 2010 », « 1950 † » (décès sans date), « † 2010 » ou « † ».
