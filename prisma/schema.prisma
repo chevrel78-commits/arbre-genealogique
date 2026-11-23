@@ -76,6 +76,9 @@ model Membre {
   personnesCreees    Personne[] @relation("PersonneCreeePar")
   personnesModifiees Personne[] @relation("PersonneModifieePar")
 
+  photosAjoutees          Photo[]
+  identificationsAjoutees IdentificationPhoto[]
+
   @@index([statut])
 }
 
@@ -135,6 +138,7 @@ model Personne {
   famillesParent2 Famille[] @relation("Parent2")
   creePar         Membre?   @relation("PersonneCreeePar", fields: [creeParId], references: [id], onDelete: SetNull)
   modifiePar      Membre?   @relation("PersonneModifieePar", fields: [modifieParId], references: [id], onDelete: SetNull)
+  identifications IdentificationPhoto[]
 
   @@index([nom, prenom])
   @@index([familleOrigineId])
@@ -158,6 +162,50 @@ model Famille {
 
   @@index([parent1Id])
   @@index([parent2Id])
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Galerie : une photo peut montrer plusieurs personnes, et une personne figurer sur plusieurs photos.
+// ---------------------------------------------------------------------------------------------------
+
+// Photo de galerie, indépendante du portrait (Personne.photo). Le fichier ne garde aucune métadonnée :
+// seuls la date et le nom du lieu sont conservés ici, jamais la position GPS exacte.
+model Photo {
+  id           Int      @id @default(autoincrement())
+  fichier      String   @unique @db.VarChar(36) // nom aléatoire (lib/stockage.ts)
+  largeur      Int
+  hauteur      Int
+  legende      String?  @db.VarChar(255)
+  jourPrise    Int?     @db.TinyInt
+  moisPrise    Int?     @db.TinyInt
+  anneePrise   Int?     @db.SmallInt
+  lieu         String?  @db.VarChar(150)
+  ajouteeParId Int?
+  creeLe       DateTime @default(now())
+
+  ajouteePar      Membre?               @relation(fields: [ajouteeParId], references: [id], onDelete: SetNull)
+  identifications IdentificationPhoto[]
+
+  @@index([ajouteeParId])
+}
+
+// « Telle personne est sur telle photo », avec éventuellement un repère sur son visage.
+model IdentificationPhoto {
+  id           Int      @id @default(autoincrement())
+  photoId      Int
+  personneId   Int
+  x            Float? // position du repère, en fraction de la largeur (0 à 1)
+  y            Float? // en fraction de la hauteur
+  ajouteeParId Int?
+  creeLe       DateTime @default(now())
+
+  photo      Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  personne   Personne @relation(fields: [personneId], references: [id], onDelete: Cascade)
+  ajouteePar Membre?  @relation(fields: [ajouteeParId], references: [id], onDelete: SetNull)
+
+  @@unique([photoId, personneId])
+  @@index([personneId])
+  @@index([ajouteeParId])
 }
 
 // ---------------------------------------------------------------------------------------------------

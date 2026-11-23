@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { TAILLE_PHOTO_MAX } from "./personnes";
 
 const COTE_GRANDE = 1200;
+const COTE_GALERIE = 1600; // plus grand que le portrait : les visages d'une photo de groupe restent lisibles
 const COTE_VIGNETTE = 240;
 const FORMATS_ACCEPTES = ["jpeg", "png", "webp"];
 
@@ -70,6 +71,39 @@ export async function enregistrerPhoto(fichier: File, recadrage?: Recadrage): Pr
     throw e;
   }
   return identifiant;
+}
+
+// Photo de galerie : cadrage d'origine conservé, vignette carrée centrée sur le sujet, aucune métadonnée.
+export async function enregistrerPhotoGalerie(fichier: File): Promise<{ identifiant: string; largeur: number; hauteur: number }> {
+  if (fichier.size === 0) throw new PhotoInvalide("Choisissez une photo.");
+  if (fichier.size > TAILLE_PHOTO_MAX) throw new PhotoInvalide("Cette photo est trop lourde (10 Mo au plus).");
+  const entree = Buffer.from(await fichier.arrayBuffer());
+
+  let grande: { data: Buffer; info: { width: number; height: number } };
+  let vignette: Buffer;
+  try {
+    const { format } = await sharp(entree).metadata();
+    if (!format || !FORMATS_ACCEPTES.includes(format)) throw new PhotoInvalide("Format non accepté : envoyez une image JPEG, PNG ou WebP.");
+    [grande, vignette] = await Promise.all([
+      sharp(entree).rotate().resize({ width: COTE_GALERIE, height: COTE_GALERIE, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true }),
+      sharp(entree).rotate().resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover", position: sharp.strategy.attention }).webp({ quality: 80 }).toBuffer(),
+    ]);
+  } catch (e) {
+    if (e instanceof PhotoInvalide) throw e;
+    console.error("Photo de galerie non traitée :", e);
+    throw new PhotoInvalide("Cette image n'a pas pu être traitée. Essayez avec une autre photo.");
+  }
+
+  const identifiant = randomUUID();
+  await mkdir(dossier(), { recursive: true });
+  try {
+    await writeFile(path.join(dossier(), `${identifiant}.webp`), grande.data);
+    await writeFile(path.join(dossier(), `${identifiant}-v.webp`), vignette);
+  } catch (e) {
+    await supprimerPhoto(identifiant);
+    throw e;
+  }
+  return { identifiant, largeur: grande.info.width, hauteur: grande.info.height };
 }
 
 export async function lirePhoto(nom: string): Promise<Buffer | null> {

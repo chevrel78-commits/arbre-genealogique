@@ -111,13 +111,22 @@ export async function supprimerPersonne(d: FormData) {
   await exigerAdministrateur();
   const id = identifiantValide(texteDe(d, "id"));
   if (id === null) return;
-  const photo = await avecVerrou(async (tx) => {
-    const personne = await tx.personne.findUnique({ where: { id }, select: { photo: true } });
+  const fichiers = await avecVerrou(async (tx) => {
+    const personne = await tx.personne.findUnique({
+      where: { id },
+      select: { photo: true, identifications: { select: { photoId: true } } },
+    });
     await tx.personne.deleteMany({ where: { id } });
-    return personne?.photo;
+    // Une photo de galerie où plus personne n'est identifiée n'apparaîtrait plus nulle part : on l'efface.
+    const orphelines = await tx.photo.findMany({
+      where: { id: { in: personne?.identifications.map((i) => i.photoId) ?? [] }, identifications: { none: {} } },
+      select: { id: true, fichier: true },
+    });
+    await tx.photo.deleteMany({ where: { id: { in: orphelines.map((o) => o.id) } } });
+    return [personne?.photo, ...orphelines.map((o) => o.fichier)];
   });
-  // Le fichier n'est effacé qu'une fois la suppression enregistrée.
-  await supprimerPhoto(photo);
+  // Les fichiers ne sont effacés qu'une fois la suppression enregistrée.
+  await Promise.all(fichiers.map((f) => supprimerPhoto(f)));
   revalidatePath("/", "layout");
   redirect("/");
 }

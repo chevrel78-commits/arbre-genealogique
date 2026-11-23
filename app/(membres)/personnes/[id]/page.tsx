@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { FormulairePhoto } from "../formulaire-photo";
+import { Galerie, type PhotoGalerie } from "../galerie";
 import { retirerLien, supprimerPersonne } from "../liens-actions";
 import { StatutCouple } from "../statut-couple";
 import { BoutonConfirme } from "@/components/bouton-confirme";
@@ -84,7 +85,7 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
   const moi = await exigerMembre();
   const id = identifiantValide((await parametres).id);
   if (id === null) notFound();
-  const [p, proches] = await Promise.all([
+  const [p, proches, photosBrutes] = await Promise.all([
     prisma.personne.findUnique({
       where: { id },
       include: {
@@ -93,8 +94,33 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
       },
     }),
     chargerProches(id),
+    prisma.photo.findMany({
+      where: { identifications: { some: { personneId: id } } },
+      orderBy: { id: "desc" },
+      include: {
+        ajouteePar: { select: { prenom: true, nom: true } },
+        identifications: {
+          orderBy: { id: "asc" },
+          select: { x: true, y: true, personne: { select: { id: true, prenom: true, nom: true } } },
+        },
+      },
+    }),
   ]);
   if (!p || !proches) notFound();
+  const photos: PhotoGalerie[] = photosBrutes.map((f) => ({
+    id: f.id,
+    fichier: f.fichier,
+    largeur: f.largeur,
+    hauteur: f.hauteur,
+    legende: f.legende,
+    jourPrise: f.jourPrise,
+    moisPrise: f.moisPrise,
+    anneePrise: f.anneePrise,
+    lieu: f.lieu,
+    ajouteeParId: f.ajouteeParId,
+    ajouteePar: f.ajouteePar ? nomDe(f.ajouteePar) : null,
+    personnes: f.identifications.map((i) => ({ id: i.personne.id, nom: nomDe(i.personne), x: i.x, y: i.y })),
+  }));
 
   const info = (await cookies()).get(COOKIE_INFO_FICHE)?.value;
   const erreurInfo = info?.startsWith("erreur:");
@@ -155,6 +181,8 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
           {p.modifiePar && `, modifiée par ${nomDe(p.modifiePar)} le ${dateCourte(p.modifieLe)}`}.
         </p>
       </article>
+
+      <Galerie personneId={p.id} photos={photos} moi={{ id: moi.id, admin: moi.admin }} />
 
       <Rubrique
         titre="Parents"
@@ -227,7 +255,7 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
         <form action={supprimerPersonne} className="border-t border-black/10 pt-4">
           <input type="hidden" name="id" value={id} />
           <BoutonConfirme
-            message={`Supprimer définitivement ${sourceNom} ? ${nbLiens} lien${nbLiens > 1 ? "s" : ""} de famille ser${nbLiens > 1 ? "ont" : "a"} retiré${nbLiens > 1 ? "s" : ""}. Ses proches resteront dans l'arbre. Cette action est irréversible.`}
+            message={`Supprimer définitivement ${sourceNom} ? ${nbLiens} lien${nbLiens > 1 ? "s" : ""} de famille ser${nbLiens > 1 ? "ont" : "a"} retiré${nbLiens > 1 ? "s" : ""}. Ses proches resteront dans l'arbre. Les photos où elle est la seule personne identifiée seront effacées. Cette action est irréversible.`}
             className="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
           >
             Supprimer cette personne

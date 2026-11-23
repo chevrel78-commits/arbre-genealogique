@@ -96,8 +96,28 @@ refuse un jour sans mois, un mois sans année, une date qui n'existe pas ou une 
 **Corriger une fiche** : ouvrez la fiche, cliquez sur **« Modifier »**, faites vos changements, puis
 cliquez sur **« Enregistrer »**. Pour retirer une information facultative, videz simplement le champ.
 
-**Ajouter une photo** : sur la fiche, cliquez sur **« Ajouter une photo »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la ou réduisez-la avec le curseur **Zoom** (de 25 % à 400 %, l'espace autour d'une photo réduite est blanc), puis cliquez sur **« Valider »**. Elle apparaît sur la fiche, les tuiles et l'arbre. **« Remplacer la photo »** la change, **« Retirer la photo »** l'efface définitivement.
-Les photos ne sont visibles que par les membres connectés. Le lieu de prise de vue et les autres informations cachées dans le fichier sont supprimés à l'envoi. Sans photo, la personne apparaît avec ses initiales.
+**Ajouter un portrait** : le portrait est l'image ronde qui représente la personne sur les tuiles et dans l'arbre. Sur la fiche, cliquez sur **« Ajouter un portrait »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la ou réduisez-la avec le curseur **Zoom** (de 25 % à 400 %, l'espace autour d'une photo réduite est blanc), puis cliquez sur **« Valider »**. **« Remplacer le portrait »** le change, **« Retirer le portrait »** l'efface définitivement. Sans portrait, la personne apparaît avec ses initiales.
+
+## La galerie de photos
+
+Chaque fiche a une rubrique **Photos**, qui rassemble toutes les photos où la personne a été identifiée. Elles ne sont visibles que par les membres connectés.
+
+**Ajouter des photos**
+
+1. Sur la fiche, cliquez sur **« + Ajouter des photos »** et choisissez une ou plusieurs images (JPEG, PNG ou WebP, 10 Mo au plus chacune).
+2. La **date de prise de vue** et le **lieu** sont remplis tout seuls quand le fichier les contient. Vérifiez-les, corrigez-les ou complétez-les. La date peut être partielle (l'année seule, par exemple). Ajoutez si vous voulez une **légende**.
+3. Cliquez sur **« Ajouter et identifier »**. La personne de la fiche est identifiée d'office.
+
+Les photos scannées ou reçues par une messagerie n'ont souvent ni date ni lieu : saisissez-les à la main si vous les connaissez. Pour le lieu, le site demande à OpenStreetMap le nom de la commune à partir d'une position arrondie à environ 1 km. Seul le nom de la commune est gardé, jamais la position exacte.
+
+**Identifier une personne** : ouvrez la photo, **cliquez sur son visage**, tapez son nom, puis choisissez-la dans la liste. **La photo apparaît aussitôt dans sa galerie**. Ensuite, **passez la souris sur son visage** : son prénom et son nom s'affichent, et un clic sur ce nom ouvre sa fiche. Sur téléphone ou tablette, les noms restent affichés. Vous pouvez aussi taper le nom sans cliquer sur la photo. Pour déplacer un repère, cliquez au bon endroit et choisissez de nouveau la même personne.
+
+**Sur une photo ouverte**
+
+- **Le × à côté d'un nom** retire la personne de cette photo. Tous les membres peuvent le faire. La dernière personne identifiée ne peut pas être retirée : il faut alors supprimer la photo.
+- **« Modifier date, lieu, légende »** corrige ces informations.
+- **« Utiliser comme portrait »** ouvre le recadrage et crée le portrait de la personne de la fiche. Il reste en place même si la photo est supprimée ensuite.
+- **« Supprimer la photo »** l'efface définitivement de toutes les galeries. Seul le membre qui l'a ajoutée ou un administrateur peut le faire.
 
 ## Les liens de famille
 
@@ -133,7 +153,8 @@ deux personnes restent dans l'arbre.
 
 **Supprimer une personne** (administrateurs seulement) : en bas de la fiche, cliquez sur **« Supprimer
 cette personne »**. Le message indique le nombre de liens retirés. Ses proches restent dans l'arbre,
-mais **la suppression est définitive**.
+mais **la suppression est définitive**. Les photos où elle était la seule personne identifiée sont effacées ;
+les autres restent dans la galerie des personnes encore identifiées.
 
 ## Se déconnecter
 
