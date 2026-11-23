@@ -43,8 +43,15 @@ conjoints. Les personnes qui ne sont pas encore reliées à la famille apparaiss
 
 - **Ouvrir une fiche** : cliquez sur la tuile.
 - **Voir tout l'arbre d'un coup** : cliquez sur **« Tout voir »**.
-- **Se déplacer dans la famille** : faites défiler l'arbre, ou cliquez sur **« Centrer »** en bas d'une
-  tuile pour amener cette personne au milieu de l'écran.
+- **Agrandir l'arbre** : cliquez sur **« Plein écran »**. Pour revenir, cliquez sur **« Quitter »** ou
+  appuyez sur la touche Échap.
+- **Déplacer l'arbre** : maintenez le clic de la souris (le curseur devient une main) et faites glisser.
+  Sur téléphone ou tablette, faites glisser avec le doigt.
+- **Se déplacer dans la famille** : cliquez sur **« Centrer »** en bas d'une tuile pour amener cette
+  personne au milieu de l'écran.
+- **Ne garder que les proches** : **« Parents et enfants »** n'affiche que la personne au centre, ses
+  parents, son ou ses conjoints et ses enfants. Cliquez sur « Centrer » sur l'un d'eux pour continuer
+  à partir de lui. **« Arbre complet »** réaffiche tout le monde.
 - **Trouver quelqu'un** : tapez son nom dans **« Chercher une personne »**, puis cliquez sur le résultat.
 - **Voir plus ou moins grand** : utilisez les boutons **−** et **+**, et faites défiler l'arbre.
 - **Replier une branche** : le petit bouton **−** en bas à droite d'une tuile cache ses descendants. Il
@@ -53,7 +60,7 @@ conjoints. Les personnes qui ne sont pas encore reliées à la famille apparaiss
 - **Masquer la belle-famille** : ce bouton garde la famille de sang de la personne au centre et les
   conjoints, et cache leurs parents, frères et sœurs. Recentrez sur quelqu'un pour voir sa propre famille.
 
-Replier ou masquer ne supprime rien et ne change rien pour les autres membres : ce réglage reste dans
+Replier, masquer ou resserrer l'arbre ne supprime rien et ne change rien pour les autres membres : ce réglage reste dans
 votre navigateur.
 - **Depuis une fiche** : **« Voir dans l'arbre »** centre l'arbre sur cette personne.
 

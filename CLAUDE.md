@@ -110,8 +110,12 @@ Next.js 16 introduit des changements par rapport aux versions précédentes : av
 - [x] Étape 5 : dessin de l'arbre (2026-11-22) : l'accueil affiche l'arbre complet, ouvert sur une personne (`/?centre=id`), avec recentrage, recherche, zoom, « Tout voir » et bascule vers la liste (`/?vue=liste`) ; aucune migration
 - [x] Étape 6 : photos (2026-11-22) : ajout, remplacement et retrait depuis la fiche ; grande image et vignette WebP sans métadonnées (`lib/stockage.ts`) ; adresse protégée `/photos/[fichier]` ; affichage sur la fiche, les tuiles et l'arbre ; aucune migration
 - [x] Compléments (2026-11-22) : statut Mariés / En couple / Divorcés (migration `divorce`), recadrage et zoom à l'ajout d'une photo, repli des branches, bouton « Masquer la belle-famille » ; onglets « Nouvelle personne » / « Personne existante », champs Information et Décès (migration `deces_information`), photo réductible jusqu'à 25 %
+- [x] Navigation dans l'arbre (2026-11-23) : bouton « Plein écran », déplacement à la souris (curseur main), vue « Parents et enfants » ; aucune migration
 
 ## Décisions
+
+- 2026-11-23 : **vue « Parents et enfants »** (choix d'Eric) : la personne au centre, ses parents, **ses conjoints** et ses enfants ; ni frères et sœurs ni belle-famille. Réglage `procheSeulement` dans `arbre_affichage_v1` ; il prend le pas sur le repli et la belle-famille, qui sont conservés pour le retour à l'arbre complet.
+- 2026-11-23 : **plein écran et déplacement** (`components/vue-arbre.tsx`) : si le navigateur refuse le plein écran ou n'y répond pas en 400 ms, l'arbre remplit la fenêtre (Échap fonctionne aussi). Le déplacement ne concerne que la souris (au doigt, le défilement natif suffit) ; au-delà de 5 pixels, le geste devient un déplacement et le clic sur la tuile est annulé.
 
 - 2026-11-22 : même stack que Palmares et Objectif (Next.js 16, Prisma 7, MariaDB, Hostinger, Git) ; comptes séparés des deux autres sites ; dépôt GitHub `chevrel78-commits/arbre-genealogique` (privé).
 - 2026-11-22 : **site privé** : accès par mot de passe, **demande d'accès validée par un administrateur** (pas d'inscription libre) ; personnes avec civilité, prénom, nom, nom de jeune fille, **année** de naissance et photo ; liens de famille par une table `Famille` (couple + enfants).

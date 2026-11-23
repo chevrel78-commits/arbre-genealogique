@@ -1,8 +1,9 @@
 "use client";
-// Affichage de l'arbre : les traits en SVG, les tuiles par-dessus, le zoom, le défilement, le repli des
-// branches et le masquage de la belle-famille. Les positions viennent de lib/disposition-arbre.ts.
+// Affichage de l'arbre : les traits en SVG, les tuiles par-dessus, le zoom, le plein écran, le déplacement
+// à la souris, le repli des branches, la vue resserrée et le masquage de la belle-famille.
+// Les positions viennent de lib/disposition-arbre.ts.
 import Link from "next/link";
-import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as EvenementPointeur } from "react";
 import { Portrait } from "@/components/tuile-personne";
 import {
   calculerAffichage,
@@ -18,6 +19,8 @@ import { anneesDeVie, CIVILITES } from "@/lib/personnes";
 const ZOOM_MIN = 0.15;
 const ZOOM_MAX = 1.25;
 const PAS_ZOOM = 0.25;
+// En dessous de cette distance (en pixels), le geste reste un simple clic sur la tuile.
+const SEUIL_DEPLACEMENT = 5;
 
 // Réglages d'affichage gardés dans ce navigateur : ils ne changent rien pour les autres membres.
 const CLE_REGLAGES = "arbre_affichage_v1";
@@ -58,9 +61,10 @@ function decoderReglages(texte: string): ReglagesAffichage {
     return {
       replies: Array.isArray(v.replies) ? v.replies.filter((x) => Number.isInteger(x)) : [],
       sansBelleFamille: v.sansBelleFamille === true,
+      procheSeulement: v.procheSeulement === true,
     };
   } catch {
-    return { replies: [], sansBelleFamille: false };
+    return { replies: [], sansBelleFamille: false, procheSeulement: false };
   }
 }
 
@@ -91,7 +95,8 @@ function TuileArbre({
         href={`/personnes/${p.id}`}
         prefetch={false}
         title={`Ouvrir la fiche de ${nomComplet}`}
-        className="flex min-h-0 flex-1 flex-col items-center gap-0.5 px-2 pt-2 hover:bg-arbre-doux/50"
+        draggable={false}
+        className="flex min-h-0 flex-1 cursor-grab flex-col items-center gap-0.5 px-2 pt-2 hover:bg-arbre-doux/50"
       >
         <Portrait prenom={p.prenom} nom={p.nom} photo={p.photo} petit />
         <span className="w-full truncate text-sm font-medium leading-tight">
@@ -135,6 +140,14 @@ function TuileArbre({
 export function VueArbre({ personnes, familles, centreId }: { personnes: PersonneArbre[]; familles: FamilleArbre[]; centreId: number }) {
   const [zoom, setZoom] = useState(1);
   const conteneur = useRef<HTMLDivElement>(null);
+  const cadre = useRef<HTMLDivElement>(null);
+  // Plein écran du navigateur, ou à défaut (certains téléphones) toute la fenêtre.
+  const [pleinEcranNatif, setPleinEcranNatif] = useState(false);
+  const [pleineFenetre, setPleineFenetre] = useState(false);
+  const pleinEcran = pleinEcranNatif || pleineFenetre;
+  const [enDeplacement, setEnDeplacement] = useState(false);
+  const glisse = useRef<{ pointeur: number; x: number; y: number; gauche: number; haut: number; actif: boolean } | null>(null);
+  const ignorerClic = useRef(false);
   // Quand on replie une branche, la tuile cliquée reste au même endroit de l'écran.
   const ancre = useRef<{ id: number; x: number; y: number } | null>(null);
 
@@ -157,7 +170,75 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
         left: (cible.x + TUILE.largeur / 2) * zoom - zone.clientWidth / 2,
         top: (cible.y + TUILE.hauteur / 2) * zoom - zone.clientHeight / 2,
       });
-  }, [noeuds, centreId, zoom]);
+  }, [noeuds, centreId, zoom, pleinEcran]);
+
+  useEffect(() => {
+    const suivre = () => {
+      const actif = document.fullscreenElement === cadre.current;
+      setPleinEcranNatif(actif);
+      if (actif) setPleineFenetre(false);
+    };
+    document.addEventListener("fullscreenchange", suivre);
+    return () => document.removeEventListener("fullscreenchange", suivre);
+  }, []);
+
+  // Le mode « toute la fenêtre » n'a pas la sortie par Échap du navigateur : on la lui donne.
+  useEffect(() => {
+    if (!pleineFenetre) return;
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPleineFenetre(false);
+    };
+    const debordement = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", touche);
+    return () => {
+      document.body.style.overflow = debordement;
+      document.removeEventListener("keydown", touche);
+    };
+  }, [pleineFenetre]);
+
+  const basculerPleinEcran = async () => {
+    if (pleineFenetre) return setPleineFenetre(false);
+    if (document.fullscreenElement) return void (await document.exitFullscreen());
+    // Selon l'appareil, la demande est refusée, absente ou reste sans réponse : on remplit alors la fenêtre.
+    const demande = cadre.current!.requestFullscreen?.().catch(() => undefined);
+    await Promise.race([demande, new Promise((fin) => setTimeout(fin, 400))]);
+    if (document.fullscreenElement !== cadre.current) setPleineFenetre(true);
+  };
+
+  // Déplacement à la souris. Au doigt, le navigateur fait déjà défiler la zone.
+  const debutGlisse = (e: EvenementPointeur<HTMLDivElement>) => {
+    ignorerClic.current = false;
+    const zone = conteneur.current;
+    if (!zone || e.pointerType !== "mouse" || e.button !== 0) return;
+    const bord = zone.getBoundingClientRect();
+    // Un clic sur les barres de défilement garde son comportement normal.
+    if (e.clientX - bord.left >= zone.clientWidth || e.clientY - bord.top >= zone.clientHeight) return;
+    glisse.current = { pointeur: e.pointerId, x: e.clientX, y: e.clientY, gauche: zone.scrollLeft, haut: zone.scrollTop, actif: false };
+  };
+
+  const finGlisse = () => {
+    glisse.current = null;
+    setEnDeplacement(false);
+  };
+
+  const suiteGlisse = (e: EvenementPointeur<HTMLDivElement>) => {
+    const g = glisse.current;
+    const zone = conteneur.current;
+    if (!g || !zone || e.pointerId !== g.pointeur) return;
+    if (e.buttons === 0) return finGlisse();
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (!g.actif) {
+      if (Math.hypot(dx, dy) < SEUIL_DEPLACEMENT) return;
+      g.actif = true;
+      ignorerClic.current = true;
+      zone.setPointerCapture(e.pointerId);
+      setEnDeplacement(true);
+    }
+    zone.scrollLeft = g.gauche - dx;
+    zone.scrollTop = g.haut - dy;
+  };
 
   const basculerBranche = (noeud: NoeudArbre) => {
     const zone = conteneur.current;
@@ -174,17 +255,27 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
   const nombreMasques = affichage.nombreMasques;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={cadre} className={`flex flex-col gap-2 ${pleinEcran ? "fixed inset-0 z-50 h-dvh bg-background p-3" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            aria-pressed={reglages.sansBelleFamille}
-            onClick={() => ecrireReglages({ ...reglages, sansBelleFamille: !reglages.sansBelleFamille })}
-            className={`${boutonOption} ${reglages.sansBelleFamille ? "border-arbre bg-arbre text-white hover:opacity-90" : "border-arbre bg-white text-arbre hover:bg-arbre-doux"}`}
+            aria-pressed={reglages.procheSeulement}
+            onClick={() => ecrireReglages({ ...reglages, procheSeulement: !reglages.procheSeulement })}
+            className={`${boutonOption} ${reglages.procheSeulement ? "border-arbre bg-arbre text-white hover:opacity-90" : "border-arbre bg-white text-arbre hover:bg-arbre-doux"}`}
           >
-            {reglages.sansBelleFamille ? "Afficher la belle-famille" : "Masquer la belle-famille"}
+            {reglages.procheSeulement ? "Arbre complet" : "Parents et enfants"}
           </button>
+          {!reglages.procheSeulement && (
+            <button
+              type="button"
+              aria-pressed={reglages.sansBelleFamille}
+              onClick={() => ecrireReglages({ ...reglages, sansBelleFamille: !reglages.sansBelleFamille })}
+              className={`${boutonOption} ${reglages.sansBelleFamille ? "border-arbre bg-arbre text-white hover:opacity-90" : "border-arbre bg-white text-arbre hover:bg-arbre-doux"}`}
+            >
+              {reglages.sansBelleFamille ? "Afficher la belle-famille" : "Masquer la belle-famille"}
+            </button>
+          )}
           {affichage.replies.size > 0 && (
             <button type="button" onClick={() => ecrireReglages({ ...reglages, replies: [] })} className={`${boutonOption} border-black/15 bg-white hover:bg-black/5`}>
               Tout déplier
@@ -197,6 +288,9 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button type="button" onClick={basculerPleinEcran} className={`${boutonOption} border-arbre bg-white text-arbre hover:bg-arbre-doux`}>
+            {pleinEcran ? "Quitter" : "Plein écran"}
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -221,7 +315,22 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
         </div>
       </div>
 
-      <div ref={conteneur} className="h-[70vh] min-h-96 overflow-auto rounded-2xl bg-background ring-1 ring-black/10">
+      <div
+        ref={conteneur}
+        onPointerDown={debutGlisse}
+        onPointerMove={suiteGlisse}
+        onPointerUp={finGlisse}
+        onPointerCancel={finGlisse}
+        onDragStart={(e) => e.preventDefault()}
+        onClickCapture={(e) => {
+          // Fin d'un déplacement : le relâchement ne doit pas ouvrir la fiche survolée.
+          if (!ignorerClic.current) return;
+          ignorerClic.current = false;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        className={`${pleinEcran ? "min-h-0 flex-1" : "h-[70vh] min-h-96"} select-none overflow-auto rounded-2xl bg-background ring-1 ring-black/10 ${enDeplacement ? "cursor-grabbing" : "cursor-grab"}`}
+      >
         <div className="relative" style={{ width: largeur * zoom, height: hauteur * zoom, margin: "0 auto" }}>
           <div className="absolute left-0 top-0 origin-top-left" style={{ width: largeur, height: hauteur, transform: `scale(${zoom})` }}>
             <svg width={largeur} height={hauteur} className="absolute left-0 top-0 text-arbre/60" fill="none" aria-hidden="true">
@@ -241,7 +350,7 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
                 key={n.personne.id}
                 noeud={n}
                 estCentre={n.personne.id === centreId}
-                nombreDescendants={affichage.nombreDescendants.get(n.personne.id) ?? 0}
+                nombreDescendants={reglages.procheSeulement ? 0 : (affichage.nombreDescendants.get(n.personne.id) ?? 0)}
                 replie={affichage.replies.has(n.personne.id)}
                 basculer={() => basculerBranche(n)}
               />
@@ -249,9 +358,11 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
           </div>
         </div>
       </div>
-      <p className="text-xs text-foreground/60">
-        Trait plein : couple marié et filiation. Deux petites barres : couple divorcé. Pointillés : couple non marié, ou frères et sœurs aux parents inconnus. Bouton − sur une tuile : replier ses descendants.
-      </p>
+      {!pleinEcran && (
+        <p className="text-xs text-foreground/60">
+          Maintenir le clic et glisser : déplacer l&apos;arbre. Trait plein : couple marié et filiation. Deux petites barres : couple divorcé. Pointillés : couple non marié, ou frères et sœurs aux parents inconnus. Bouton − sur une tuile : replier ses descendants.
+        </p>
+      )}
     </div>
   );
 }

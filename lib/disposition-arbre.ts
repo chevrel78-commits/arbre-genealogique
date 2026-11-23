@@ -38,7 +38,7 @@ const barresDivorce = (x: number, y: number) => `M${x - 5} ${y + 6}L${x - 1} ${y
 // Ce que l'on affiche : branches repliées et belle-famille masquée (réglages propres à chaque navigateur)
 // ---------------------------------------------------------------------------------------------------
 
-export type ReglagesAffichage = { replies: number[]; sansBelleFamille: boolean };
+export type ReglagesAffichage = { replies: number[]; sansBelleFamille: boolean; procheSeulement: boolean };
 
 function indexer(personnes: PersonneArbre[], familles: FamilleArbre[]) {
   const parId = new Map(personnes.map((p) => [p.id, p]));
@@ -89,6 +89,23 @@ function familleDeSang(centreId: number, index: Index) {
 
 export function calculerAffichage(personnes: PersonneArbre[], familles: FamilleArbre[], centreId: number, reglages: ReglagesAffichage) {
   const index = indexer(personnes, familles);
+  const nombreDescendants = new Map(personnes.map((p) => [p.id, descendants(p.id, index).size]));
+
+  // Vue resserrée : la personne au centre, ses parents, ses conjoints et ses enfants. Elle remplace les
+  // autres réglages, qui sont conservés et reviennent avec l'arbre complet.
+  if (reglages.procheSeulement) {
+    const proches = new Set([centreId]);
+    const origine = index.parId.get(centreId)?.familleOrigineId;
+    const familleOrigine = origine != null ? index.familleParId.get(origine) : undefined;
+    if (familleOrigine) for (const p of parentsDe(familleOrigine)) proches.add(p);
+    for (const u of index.unions.get(centreId) ?? []) {
+      for (const c of parentsDe(u)) proches.add(c);
+      for (const e of index.enfants.get(u.id) ?? []) proches.add(e);
+    }
+    const visibles = personnes.filter((p) => proches.has(p.id));
+    return { visibles, replies: new Set<number>(), nombreMasques: personnes.length - visibles.length, nombreDescendants };
+  }
+
   const masques = new Set<number>();
 
   if (reglages.sansBelleFamille) {
@@ -127,7 +144,7 @@ export function calculerAffichage(personnes: PersonneArbre[], familles: FamilleA
     visibles: personnes.filter((p) => !masques.has(p.id)),
     replies,
     nombreMasques: masques.size,
-    nombreDescendants: new Map(personnes.map((p) => [p.id, descendants(p.id, index).size])),
+    nombreDescendants,
   };
 }
 
