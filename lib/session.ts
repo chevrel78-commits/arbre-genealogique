@@ -10,12 +10,26 @@ const DUREE_JOURS = 30;
 
 const empreinte = (jeton: string) => createHash("sha256").update(jeton).digest("hex");
 
+// Note la connexion pour le tableau de bord et efface l'historique de plus de 6 mois.
+// Un échec ici ne doit jamais empêcher quelqu'un d'entrer sur le site.
+async function noterConnexion(membreId: number) {
+  try {
+    await prisma.connexionMembre.create({ data: { membreId } });
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - 6);
+    await prisma.connexionMembre.deleteMany({ where: { creeLe: { lt: limite } } });
+  } catch (e) {
+    console.error("Connexion non notée :", e instanceof Error ? e.name : e);
+  }
+}
+
 export async function ouvrirSession(membreId: number) {
   const jeton = randomBytes(32).toString("base64url");
   const expireLe = new Date(Date.now() + DUREE_JOURS * 24 * 3600 * 1000);
   await prisma.sessionMembre.create({ data: { jetonHash: empreinte(jeton), membreId, expireLe } });
   // Ménage : les sessions expirées ne servent plus à rien.
   await prisma.sessionMembre.deleteMany({ where: { expireLe: { lt: new Date() } } });
+  await noterConnexion(membreId);
   (await cookies()).set(NOM_COOKIE, jeton, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

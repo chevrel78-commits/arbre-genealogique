@@ -156,6 +156,19 @@ cette personne »**. Le message indique le nombre de liens retirés. Ses proches
 mais **la suppression est définitive**. Les photos où elle était la seule personne identifiée sont effacées ;
 les autres restent dans la galerie des personnes encore identifiées.
 
+## Le tableau de bord d'activité
+
+Cliquez sur **« Activité »**, en haut de la page, pour voir ce qui se passe sur le site.
+
+- **Les chiffres** : le nombre de personnes, de photos et de membres.
+- **Derniers ajouts** : les personnes et les photos ajoutées et les identifications, avec leur auteur et leur date. Cliquez sur une ligne pour ouvrir la fiche concernée. Un élément supprimé n'y apparaît plus.
+- **Dernières connexions** : qui s'est connecté et quand. Cette partie n'est visible que par les **administrateurs**, et l'historique est gardé 6 mois.
+
+## Aide et support
+
+- **Aide** : le bouton **?**, en haut de la page, ouvre ce guide avec un sommaire cliquable.
+- **Support** : l'icône **enveloppe**, à côté, prépare un message à support@altea.website dans votre messagerie. Si vous n'arrivez pas à vous connecter, la même adresse figure en bas de la page « Se connecter ».
+
 ## Se déconnecter
 
 Cliquez sur **« Se déconnecter »**, en haut à droite. Pensez-y sur un ordinateur partagé : après la
