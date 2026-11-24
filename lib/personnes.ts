@@ -113,10 +113,11 @@ export function phraseDeces(p: {
 }
 
 // Sous une photo : « Prise le 3 mai 1962 à Lyon », « Prise en 1962 », « Prise à Lyon », ou null.
-export function phrasePrise(p: { jourPrise: number | null; moisPrise: number | null; anneePrise: number | null; lieu: string | null }) {
+// Sous un document PDF : « Établi le 3 mai 1962 à Lyon », « Établi en 1962 »…
+export function phrasePrise(p: { format?: "IMAGE" | "PDF"; jourPrise: number | null; moisPrise: number | null; anneePrise: number | null; lieu: string | null }) {
   const date = dateEnTexte({ jour: p.jourPrise, mois: p.moisPrise, annee: p.anneePrise });
   if (!date && !p.lieu) return null;
-  return ["Prise", date, p.lieu ? `à ${p.lieu}` : ""].filter(Boolean).join(" ");
+  return [p.format === "PDF" ? "Établi" : "Prise", date, p.lieu ? `à ${p.lieu}` : ""].filter(Boolean).join(" ");
 }
 
 // Sur les tuiles : « 1950 », « 1950 – 2010 », « 1950 † » (décès sans date), « † 2010 » ou « † ».

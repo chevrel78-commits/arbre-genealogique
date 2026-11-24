@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Photo` ADD COLUMN `format` ENUM('IMAGE', 'PDF') NOT NULL DEFAULT 'IMAGE';

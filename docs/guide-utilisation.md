@@ -98,13 +98,13 @@ cliquez sur **« Enregistrer »**. Pour retirer une information facultative, vid
 
 **Ajouter un portrait** : le portrait est l'image ronde qui représente la personne sur les tuiles et dans l'arbre. Sur la fiche, cliquez sur **« Ajouter un portrait »** et choisissez une image JPEG, PNG ou WebP de 10 Mo au plus. Sur un téléphone, vous pouvez aussi prendre la photo directement. Une fenêtre s'ouvre pour la **recadrer** : faites glisser la photo dans le carré, agrandissez-la ou réduisez-la avec le curseur **Zoom** (de 25 % à 400 %, l'espace autour d'une photo réduite est blanc), puis cliquez sur **« Valider »**. **« Remplacer le portrait »** le change, **« Retirer le portrait »** l'efface définitivement. Sans portrait, la personne apparaît avec ses initiales.
 
-## La galerie de photos
+## La galerie de photos et de documents
 
-Chaque fiche a une rubrique **Photos**, qui rassemble toutes les photos où la personne a été identifiée. Elles ne sont visibles que par les membres connectés.
+Chaque fiche a une rubrique **Photos et documents**, qui rassemble toutes les photos et tous les documents PDF où la personne a été identifiée. Ils ne sont visibles que par les membres connectés.
 
 **Ajouter des photos**
 
-1. Sur la fiche, cliquez sur **« + Ajouter des photos »** et choisissez une ou plusieurs images (JPEG, PNG ou WebP, 10 Mo au plus chacune).
+1. Sur la fiche, cliquez sur **« + Ajouter »** et choisissez une ou plusieurs images (JPEG, PNG ou WebP, 10 Mo au plus chacune).
 2. La **date de prise de vue** et le **lieu** sont remplis tout seuls quand le fichier les contient. Vérifiez-les, corrigez-les ou complétez-les. La date peut être partielle (l'année seule, par exemple). Ajoutez si vous voulez une **légende**.
 3. Cliquez sur **« Ajouter et identifier »**. La personne de la fiche est identifiée d'office.
 
@@ -118,6 +118,16 @@ Les photos scannées ou reçues par une messagerie n'ont souvent ni date ni lieu
 - **« Modifier date, lieu, légende »** corrige ces informations.
 - **« Utiliser comme portrait »** ouvre le recadrage et crée le portrait de la personne de la fiche. Il reste en place même si la photo est supprimée ensuite.
 - **« Supprimer la photo »** l'efface définitivement de toutes les galeries. Seul le membre qui l'a ajoutée ou un administrateur peut le faire.
+
+**Ajouter un document PDF** (un acte de naissance scanné, un livret de famille, une lettre…)
+
+1. Cliquez sur **« + Ajouter »** et choisissez un fichier PDF de 10 Mo au plus. Vous pouvez mélanger photos et PDF dans le même envoi.
+2. Le site prépare l'image de la **première page**, qui servira de vignette. Un PDF ne contient pas de date fiable : saisissez la **date du document** et le **lieu** si vous les connaissez, et une **légende** (par exemple « Acte de naissance »).
+3. Cliquez sur **« Ajouter et identifier »**. Dans la galerie, le document porte un petit badge rouge **PDF**.
+
+**Sur un document ouvert** : vous voyez sa première page. **« Ouvrir le PDF »** l'affiche en entier dans un nouvel onglet, **« Télécharger »** l'enregistre sur votre appareil sous le nom de sa légende. Pour y associer une personne, **tapez simplement son nom** (il n'y a pas de visage à cliquer). « Modifier date, lieu, légende », le × à côté d'un nom et « Supprimer le document » fonctionnent comme pour une photo. Un document ne peut pas servir de portrait.
+
+Si l'aperçu de la première page ne peut pas être préparé (PDF abîmé ou protégé par un mot de passe), une icône de page le remplace : le document reste consultable.
 
 ## Les liens de famille
 
@@ -153,15 +163,15 @@ deux personnes restent dans l'arbre.
 
 **Supprimer une personne** (administrateurs seulement) : en bas de la fiche, cliquez sur **« Supprimer
 cette personne »**. Le message indique le nombre de liens retirés. Ses proches restent dans l'arbre,
-mais **la suppression est définitive**. Les photos où elle était la seule personne identifiée sont effacées ;
+mais **la suppression est définitive**. Les photos et documents où elle était la seule personne identifiée sont effacés ;
 les autres restent dans la galerie des personnes encore identifiées.
 
 ## Le tableau de bord d'activité
 
 Cliquez sur **« Activité »**, en haut de la page, pour voir ce qui se passe sur le site.
 
-- **Les chiffres** : le nombre de personnes, de photos et de membres.
-- **Derniers ajouts** : les personnes et les photos ajoutées et les identifications, avec leur auteur et leur date. Cliquez sur une ligne pour ouvrir la fiche concernée. Un élément supprimé n'y apparaît plus.
+- **Les chiffres** : le nombre de personnes, de photos, de documents et de membres.
+- **Derniers ajouts** : les personnes, les photos et les documents ajoutés, et les identifications, avec leur auteur et leur date. Cliquez sur une ligne pour ouvrir la fiche concernée. Un élément supprimé n'y apparaît plus.
 - **Dernières connexions** : qui s'est connecté et quand. Cette partie n'est visible que par les **administrateurs**, et l'historique est gardé 6 mois.
 
 ## Aide et support

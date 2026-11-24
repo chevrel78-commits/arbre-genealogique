@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { exigerMembre } from "@/lib/acces";
 import { erreurDatePrise, identifiantValide, type DatePartielle } from "@/lib/personnes";
 import { prisma } from "@/lib/prisma";
-import { enregistrerPhotoGalerie, PhotoInvalide, supprimerPhoto } from "@/lib/stockage";
+import { enregistrerDocumentGalerie, enregistrerPhotoGalerie, PhotoInvalide, supprimerPhoto } from "@/lib/stockage";
 
 export type EtatGalerie = { erreur?: string };
 export type PersonneIdentifiable = { id: number; nom: string; precision: string | null };
@@ -46,14 +46,17 @@ export async function ajouterPhotoGalerie(d: FormData): Promise<EtatGalerie & { 
   const personneId = idValide(d.get("id"));
   const fichier = d.get("photo");
   if (personneId === null) return { erreur: "Cette personne n'existe plus." };
-  if (!(fichier instanceof File)) return { erreur: "Choisissez une photo." };
+  if (!(fichier instanceof File)) return { erreur: "Choisissez une photo ou un document." };
   const infos = lireInfos(d);
   if (!infos.donnees) return { erreur: infos.erreur };
   if (!(await prisma.personne.findUnique({ where: { id: personneId }, select: { id: true } }))) return { erreur: "Cette personne n'existe plus." };
 
+  // Un PDF arrive avec l'image de sa première page (« apercu »), dessinée dans le navigateur.
+  const document = d.get("format") === "PDF";
+  const apercu = d.get("apercu");
   let image: Awaited<ReturnType<typeof enregistrerPhotoGalerie>>;
   try {
-    image = await enregistrerPhotoGalerie(fichier);
+    image = document ? await enregistrerDocumentGalerie(fichier, apercu instanceof File ? apercu : null) : await enregistrerPhotoGalerie(fichier);
   } catch (e) {
     if (e instanceof PhotoInvalide) return { erreur: e.message };
     console.error("Photo de galerie non enregistrée :", e);
@@ -66,6 +69,7 @@ export async function ajouterPhotoGalerie(d: FormData): Promise<EtatGalerie & { 
       data: {
         ...infos.donnees,
         fichier: image.identifiant,
+        format: document ? "PDF" : "IMAGE",
         largeur: image.largeur,
         hauteur: image.hauteur,
         ajouteeParId: membre.id,
