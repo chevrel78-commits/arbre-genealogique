@@ -1,5 +1,6 @@
 "use client";
-// Galerie d'une fiche : ajout de photos (date et lieu lus dans le fichier), vue en grand, identification.
+// Galerie d'une fiche : ajout de photos (date et lieu lus dans le fichier) et de documents PDF (aperçu de la
+// première page dessiné par pdf.js), vue en grand, identification.
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type MouseEvent } from "react";
 import {
@@ -16,11 +17,13 @@ import { preparerImage } from "./formulaire-photo";
 import { envoyerPhoto } from "./photo-actions";
 import { RecadragePhoto, type ZoneRecadrage } from "./recadrage-photo";
 import { classeChamp, Erreur } from "@/components/formulaire";
+import { apercuPdf } from "@/lib/apercu-pdf";
 import { MOIS, phrasePrise, TAILLE_PHOTO_MAX } from "@/lib/personnes";
 
 export type PhotoGalerie = {
   id: number;
   fichier: string;
+  format: "IMAGE" | "PDF";
   largeur: number;
   hauteur: number;
   legende: string | null;
@@ -34,7 +37,11 @@ export type PhotoGalerie = {
 };
 
 type Infos = { jour: string; mois: string; annee: string; lieu: string; legende: string };
-type Attente = { fichier: File; url: string };
+// pdf : document PDF ; url sert de clé et, pour une image, d'aperçu (pour un PDF, l'aperçu est dessiné à part).
+type Attente = { fichier: File; url: string; pdf: boolean };
+
+const TYPES_IMAGE = ["image/jpeg", "image/png", "image/webp"];
+const estPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
 
 const COTE_ENVOI = 1600;
 const boutonSecondaire = "rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60";
@@ -74,12 +81,18 @@ async function reduireImage(url: string): Promise<Blob | null> {
   return new Promise((resoudre) => toile.toBlob(resoudre, "image/jpeg", 0.92));
 }
 
-function ChampsInfos({ infos, onChange, recherche }: { infos: Infos; onChange: (i: Infos) => void; recherche?: boolean }) {
+// Nom proposé au téléchargement d'un document : sa légende, sans caractères interdits dans un nom de fichier.
+function nomTelechargement(legende: string | null) {
+  const nom = (legende ?? "").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  return `${nom || "document"}.pdf`;
+}
+
+function ChampsInfos({ infos, onChange, recherche, document }: { infos: Infos; onChange: (i: Infos) => void; recherche?: boolean; document?: boolean }) {
   const maj = (champ: keyof Infos) => (e: { target: { value: string } }) => onChange({ ...infos, [champ]: e.target.value });
   return (
     <div className="flex flex-col gap-3">
       <fieldset className="flex flex-col gap-1">
-        <legend className="text-sm font-medium">Date de prise de vue (facultative, même partielle)</legend>
+        <legend className="text-sm font-medium">{document ? "Date du document" : "Date de prise de vue"} (facultative, même partielle)</legend>
         <div className="grid grid-cols-[4.5rem_1fr_5.5rem] gap-2">
           <input aria-label="Jour" inputMode="numeric" maxLength={2} placeholder="Jour" value={infos.jour} onChange={maj("jour")} className={`${classeChamp} min-w-0`} />
           <select aria-label="Mois" value={infos.mois} onChange={maj("mois")} className={`${classeChamp} min-w-0 bg-white`}>
@@ -99,7 +112,7 @@ function ChampsInfos({ infos, onChange, recherche }: { infos: Infos; onChange: (
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium">
         Légende
-        <input value={infos.legende} onChange={maj("legende")} maxLength={255} placeholder="Par exemple : Noël en famille" className={classeChamp} />
+        <input value={infos.legende} onChange={maj("legende")} maxLength={255} placeholder={document ? "Par exemple : Acte de naissance" : "Par exemple : Noël en famille"} className={classeChamp} />
       </label>
     </div>
   );
@@ -133,8 +146,27 @@ function FenetreAjout({
   const [trouve, setTrouve] = useState<string>();
   const [erreur, setErreur] = useState<string>();
   const [enCours, demarrer] = useTransition();
+  // Aperçu d'un PDF : undefined pendant la préparation, null si le navigateur n'a pas pu le dessiner.
+  const [apercu, setApercu] = useState<{ image: Blob; url: string } | null | undefined>(attente.pdf ? undefined : null);
 
   useEffect(() => {
+    if (!attente.pdf) return;
+    let actif = true;
+    let url: string | undefined;
+    apercuPdf(attente.fichier).then((image) => {
+      if (!actif) return;
+      url = image ? URL.createObjectURL(image) : undefined;
+      setApercu(image && url ? { image, url } : null);
+      setTrouve(image ? "Un PDF ne contient pas de date fiable : saisissez-la si vous la connaissez." : "L'aperçu de ce PDF n'a pas pu être préparé : une icône le remplacera.");
+    });
+    return () => {
+      actif = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [attente]);
+
+  useEffect(() => {
+    if (attente.pdf) return;
     let actif = true;
     (async () => {
       const { date, gps } = await lireExif(attente.fichier);
@@ -162,26 +194,47 @@ function FenetreAjout({
         const donnees = new FormData();
         donnees.set("id", String(personneId));
         versFormulaire(donnees, infos);
-        const image = await reduireImage(attente.url).catch(() => null);
         // Nom neutre : un nom avec espaces ou accents fait échouer l'envoi sur l'hébergement.
-        donnees.set("photo", image ? new File([image], "photo.jpg", { type: "image/jpeg" }) : new File([attente.fichier], "photo", { type: attente.fichier.type }));
+        if (attente.pdf) {
+          donnees.set("format", "PDF");
+          donnees.set("photo", new File([attente.fichier], "document.pdf", { type: "application/pdf" }));
+          if (apercu) donnees.set("apercu", new File([apercu.image], "apercu.jpg", { type: "image/jpeg" }));
+        } else {
+          const image = await reduireImage(attente.url).catch(() => null);
+          donnees.set("photo", image ? new File([image], "photo.jpg", { type: "image/jpeg" }) : new File([attente.fichier], "photo", { type: attente.fichier.type }));
+        }
         const r = await ajouterPhotoGalerie(donnees);
         if (r.photoId) onEnvoyee(r.photoId);
         else setErreur(r.erreur);
       } catch (e) {
         console.error("Envoi de la photo impossible :", e);
-        setErreur("L'envoi de la photo a échoué. Vérifiez votre connexion, puis réessayez.");
+        setErreur(`L'envoi ${attente.pdf ? "du document" : "de la photo"} a échoué. Vérifiez votre connexion, puis réessayez.`);
       }
     });
 
+  const quoi = attente.pdf ? "un document" : "une photo";
   return (
-    <div role="dialog" aria-modal="true" aria-label="Ajouter une photo" className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+    <div role="dialog" aria-modal="true" aria-label={`Ajouter ${quoi}`} className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
       <div className="my-auto flex w-full max-w-lg flex-col gap-4 rounded-2xl bg-white p-5 shadow-xl">
-        <h2 className="text-lg font-semibold">Ajouter une photo{reste > 1 ? ` (encore ${reste})` : ""}</h2>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={attente.url} alt="Photo à ajouter" className="max-h-56 w-full rounded-lg bg-background object-contain" />
+        <h2 className="text-lg font-semibold">
+          Ajouter {quoi}
+          {reste > 1 ? ` (encore ${reste})` : ""}
+        </h2>
+        {attente.pdf ? (
+          apercu ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={apercu.url} alt="Première page du document" className="max-h-56 w-full rounded-lg bg-background object-contain" />
+          ) : (
+            <p className="flex h-32 items-center justify-center rounded-lg bg-background text-sm text-foreground/60">
+              {apercu === undefined ? "Préparation de l'aperçu…" : "PDF sans aperçu"}
+            </p>
+          )
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={attente.url} alt="Photo à ajouter" className="max-h-56 w-full rounded-lg bg-background object-contain" />
+        )}
         {trouve && <p className="text-sm text-foreground/70">{trouve}</p>}
-        <ChampsInfos infos={infos} onChange={setInfos} recherche={recherche} />
+        <ChampsInfos infos={infos} onChange={setInfos} recherche={recherche} document={attente.pdf} />
         <Erreur>{erreur}</Erreur>
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onAnnuler} disabled={enCours} className={boutonSecondaire}>
@@ -189,10 +242,10 @@ function FenetreAjout({
           </button>
           {reste > 1 && (
             <button type="button" onClick={onPasser} disabled={enCours} className={boutonSecondaire}>
-              Passer cette photo
+              Passer {attente.pdf ? "ce document" : "cette photo"}
             </button>
           )}
-          <button type="button" onClick={envoyer} disabled={enCours} className={boutonPrincipal}>
+          <button type="button" onClick={envoyer} disabled={enCours || apercu === undefined} className={boutonPrincipal}>
             {enCours ? "Envoi…" : "Ajouter et identifier"}
           </button>
         </div>
@@ -230,6 +283,7 @@ function Visionneuse({
   const [enCours, demarrer] = useTransition();
   const champ = useRef<HTMLInputElement>(null);
   const url = `/photos/${photo.fichier}.webp`;
+  const pdf = photo.format === "PDF";
   const descriptif = phrasePrise(photo);
 
   useEffect(() => {
@@ -274,7 +328,9 @@ function Visionneuse({
     setSurvol(proche);
   };
 
+  // Sur un document, pas de repère : on identifie seulement par le nom.
   const placer = (e: MouseEvent<HTMLImageElement>) => {
+    if (pdf) return;
     const r = e.currentTarget.getBoundingClientRect();
     setRepere({ x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) });
     setErreur(undefined);
@@ -308,7 +364,7 @@ function Visionneuse({
   const peutSupprimer = moi.admin || photo.ajouteeParId === moi.id;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Photo en grand" className="fixed inset-0 z-40 overflow-y-auto bg-black/80 p-3 sm:p-6">
+    <div role="dialog" aria-modal="true" aria-label={pdf ? "Document" : "Photo en grand"} className="fixed inset-0 z-40 overflow-y-auto bg-black/80 p-3 sm:p-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-2xl bg-white p-4 shadow-xl">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-2">
@@ -329,12 +385,12 @@ function Visionneuse({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={url}
-              alt={photo.legende ?? `Photo avec ${photo.personnes.map((p) => p.nom).join(", ")}`}
+              alt={photo.legende ?? `${pdf ? "Première page d'un document concernant" : "Photo avec"} ${photo.personnes.map((p) => p.nom).join(", ")}`}
               width={photo.largeur}
               height={photo.hauteur}
               onClick={placer}
               draggable={false}
-              className="block h-auto max-h-[65vh] w-auto max-w-full cursor-crosshair select-none rounded-lg"
+              className={`block h-auto max-h-[65vh] w-auto max-w-full select-none rounded-lg ${pdf ? "ring-1 ring-black/10" : "cursor-crosshair"}`}
             />
             {photo.personnes
               .filter((p) => p.x !== null && p.y !== null)
@@ -367,6 +423,17 @@ function Visionneuse({
           </div>
         </div>
 
+        {pdf && (
+          <div className="flex flex-wrap justify-center gap-2">
+            <a href={`/photos/${photo.fichier}.pdf`} target="_blank" rel="noopener" className={boutonPrincipal}>
+              Ouvrir le PDF
+            </a>
+            <a href={`/photos/${photo.fichier}.pdf`} download={nomTelechargement(photo.legende)} className={`${boutonSecondaire} py-2`}>
+              Télécharger
+            </a>
+          </div>
+        )}
+
         {(photo.legende || descriptif) && (
           <div className="text-center">
             {photo.legende && <p className="font-medium">{photo.legende}</p>}
@@ -375,7 +442,7 @@ function Visionneuse({
         )}
 
         <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">Sur cette photo</h3>
+          <h3 className="text-sm font-semibold">{pdf ? "Personnes concernées" : "Sur cette photo"}</h3>
           <ul className="flex flex-wrap gap-2">
             {photo.personnes.map((p) => (
               <li key={p.id} className="flex items-center gap-1 rounded-full bg-arbre-doux px-3 py-1 text-sm">
@@ -386,8 +453,8 @@ function Visionneuse({
                   <button
                     type="button"
                     disabled={enCours}
-                    aria-label={`Retirer ${p.nom} de cette photo`}
-                    title="Retirer de cette photo"
+                    aria-label={`Retirer ${p.nom} de ${pdf ? "ce document" : "cette photo"}`}
+                    title={`Retirer de ${pdf ? "ce document" : "cette photo"}`}
                     onClick={() => agir(() => retirerIdentification(photo.id, p.id))}
                     className="px-1 text-red-700"
                   >
@@ -404,7 +471,11 @@ function Visionneuse({
             Identifier une personne
           </label>
           <p className="text-sm text-foreground/70">
-            {repere ? "Repère placé : choisissez maintenant le nom." : "Cliquez sur un visage, puis tapez le nom. Vous pouvez aussi taper le nom sans placer de repère."}
+            {pdf
+              ? "Tapez le nom d'une personne concernée par ce document."
+              : repere
+                ? "Repère placé : choisissez maintenant le nom."
+                : "Cliquez sur un visage, puis tapez le nom. Vous pouvez aussi taper le nom sans placer de repère."}
           </p>
           <div className="flex gap-2">
             <input
@@ -441,7 +512,7 @@ function Visionneuse({
 
         {edition && (
           <section className="flex flex-col gap-3 rounded-lg bg-background p-3">
-            <ChampsInfos infos={edition} onChange={setEdition} />
+            <ChampsInfos infos={edition} onChange={setEdition} document={pdf} />
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setEdition(null)} className={boutonSecondaire}>
                 Annuler
@@ -482,23 +553,35 @@ function Visionneuse({
           >
             Modifier date, lieu, légende
           </button>
-          <button type="button" disabled={enCours} onClick={() => setRecadrage(true)} className={boutonSecondaire}>
-            Utiliser comme portrait
-          </button>
+          {!pdf && (
+            <button type="button" disabled={enCours} onClick={() => setRecadrage(true)} className={boutonSecondaire}>
+              Utiliser comme portrait
+            </button>
+          )}
           {peutSupprimer && (
             <button
               type="button"
               disabled={enCours}
               className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
               onClick={() => {
-                if (window.confirm("Supprimer cette photo ? Elle disparaîtra de la galerie de toutes les personnes identifiées. Cette action est irréversible."))
+                if (
+                  window.confirm(
+                    pdf
+                      ? "Supprimer ce document ? Il disparaîtra de la galerie de toutes les personnes concernées. Cette action est irréversible."
+                      : "Supprimer cette photo ? Elle disparaîtra de la galerie de toutes les personnes identifiées. Cette action est irréversible.",
+                  )
+                )
                   agir(() => supprimerPhotoGalerie(photo.id), onFermer);
               }}
             >
-              Supprimer la photo
+              {pdf ? "Supprimer le document" : "Supprimer la photo"}
             </button>
           )}
-          {photo.ajouteePar && <span className="ml-auto text-xs text-foreground/50">Ajoutée par {photo.ajouteePar}</span>}
+          {photo.ajouteePar && (
+            <span className="ml-auto text-xs text-foreground/50">
+              {pdf ? "Ajouté" : "Ajoutée"} par {photo.ajouteePar}
+            </span>
+          )}
         </div>
       </div>
       {recadrage && <RecadragePhoto url={url} onValider={definirPortrait} onAnnuler={() => setRecadrage(false)} onErreur={() => setRecadrage(false)} />}
@@ -549,22 +632,22 @@ export function Galerie({
 
   const choisirFichiers = (fichiers: FileList | null) => {
     const tous = [...(fichiers ?? [])];
-    const valides = tous.filter((f) => f.size <= TAILLE_PHOTO_MAX && ["image/jpeg", "image/png", "image/webp"].includes(f.type));
+    const valides = tous.filter((f) => f.size <= TAILLE_PHOTO_MAX && (TYPES_IMAGE.includes(f.type) || estPdf(f)));
     const ecartes = tous.length - valides.length;
-    setErreur(ecartes ? `${ecartes} fichier${ecartes > 1 ? "s" : ""} écarté${ecartes > 1 ? "s" : ""} : JPEG, PNG ou WebP de 10 Mo au plus.` : undefined);
-    setFile((f) => [...f, ...valides.map((fichier) => ({ fichier, url: URL.createObjectURL(fichier) }))]);
+    setErreur(ecartes ? `${ecartes} fichier${ecartes > 1 ? "s" : ""} écarté${ecartes > 1 ? "s" : ""} : JPEG, PNG, WebP ou PDF de 10 Mo au plus.` : undefined);
+    setFile((f) => [...f, ...valides.map((fichier) => ({ fichier, url: URL.createObjectURL(fichier), pdf: estPdf(fichier) }))]);
   };
 
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Photos{photos.length > 0 ? ` (${photos.length})` : ""}</h2>
+        <h2 className="text-lg font-semibold">Photos et documents{photos.length > 0 ? ` (${photos.length})` : ""}</h2>
         <label className="inline-block cursor-pointer rounded-lg border border-arbre px-3 py-1 text-sm font-medium text-arbre hover:bg-arbre-doux has-focus-visible:outline-2 has-focus-visible:outline-arbre">
-          + Ajouter des photos
+          + Ajouter
           <input
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
             className="sr-only"
             onChange={(e) => {
               choisirFichiers(e.target.files);
@@ -575,7 +658,7 @@ export function Galerie({
       </div>
       <Erreur>{erreur}</Erreur>
       {photos.length === 0 ? (
-        <p className="text-sm text-foreground/60">Aucune photo pour l&apos;instant.</p>
+        <p className="text-sm text-foreground/60">Aucune photo ni aucun document pour l&apos;instant.</p>
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
           {photos.map((p) => (
@@ -583,11 +666,12 @@ export function Galerie({
               key={p.id}
               type="button"
               onClick={() => setOuverteId(p.id)}
-              aria-label={`Ouvrir la photo${p.legende ? ` : ${p.legende}` : ""}`}
-              className="overflow-hidden rounded-lg bg-arbre-doux ring-1 ring-black/5 transition hover:ring-2 hover:ring-arbre focus-visible:outline-2 focus-visible:outline-arbre"
+              aria-label={`Ouvrir ${p.format === "PDF" ? "le document" : "la photo"}${p.legende ? ` : ${p.legende}` : ""}`}
+              className="relative overflow-hidden rounded-lg bg-arbre-doux ring-1 ring-black/5 transition hover:ring-2 hover:ring-arbre focus-visible:outline-2 focus-visible:outline-arbre"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`/photos/${p.fichier}-v.webp`} alt="" loading="lazy" decoding="async" className="aspect-square w-full object-cover" />
+              {p.format === "PDF" && <span className="absolute bottom-1 left-1 rounded bg-red-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">PDF</span>}
             </button>
           ))}
         </div>

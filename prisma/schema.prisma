@@ -182,11 +182,19 @@ model Famille {
 // Galerie : une photo peut montrer plusieurs personnes, et une personne figurer sur plusieurs photos.
 // ---------------------------------------------------------------------------------------------------
 
-// Photo de galerie, indépendante du portrait (Personne.photo). Le fichier ne garde aucune métadonnée :
-// seuls la date et le nom du lieu sont conservés ici, jamais la position GPS exacte.
+// IMAGE : photo réduite, sans métadonnées. PDF : document gardé tel quel, avec l'image de sa première page
+// comme aperçu et vignette (créée dans le navigateur par pdf.js).
+enum FormatPhoto {
+  IMAGE
+  PDF
+}
+
+// Photo ou document de galerie, indépendant du portrait (Personne.photo). Une image ne garde aucune
+// métadonnée : seuls la date et le nom du lieu sont conservés ici, jamais la position GPS exacte.
 model Photo {
-  id           Int      @id @default(autoincrement())
-  fichier      String   @unique @db.VarChar(36) // nom aléatoire (lib/stockage.ts)
+  id           Int         @id @default(autoincrement())
+  fichier      String      @unique @db.VarChar(36) // nom aléatoire (lib/stockage.ts)
+  format       FormatPhoto @default(IMAGE)
   largeur      Int
   hauteur      Int
   legende      String?  @db.VarChar(255)

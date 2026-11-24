@@ -15,7 +15,7 @@ type Nom = { prenom: string; nom: string };
 type Evenement = {
   cle: string;
   date: Date;
-  type: "Personne" | "Photo" | "Identification";
+  type: "Personne" | "Photo" | "Document" | "Identification";
   auteur: Nom | null;
   texte: string;
   personneId: number | null;
@@ -29,6 +29,7 @@ const dateHeure = (d: Date) =>
 const COULEURS = {
   Personne: "bg-arbre-doux text-arbre",
   Photo: "bg-amber-50 text-amber-800",
+  Document: "bg-red-50 text-red-800",
   Identification: "bg-sky-50 text-sky-800",
 };
 
@@ -48,6 +49,7 @@ async function lireFil(): Promise<Evenement[]> {
       select: {
         id: true,
         fichier: true,
+        format: true,
         creeLe: true,
         ajouteePar: auteur,
         identifications: { orderBy: { id: "asc" }, select: { personne: nomPersonne } },
@@ -62,7 +64,7 @@ async function lireFil(): Promise<Evenement[]> {
         ajouteeParId: true,
         ajouteePar: auteur,
         personne: nomPersonne,
-        photo: { select: { fichier: true, creeLe: true, ajouteeParId: true } },
+        photo: { select: { fichier: true, format: true, creeLe: true, ajouteeParId: true } },
       },
     }),
   ]);
@@ -80,12 +82,13 @@ async function lireFil(): Promise<Evenement[]> {
     ...photos.map((p): Evenement => {
       const [premiere, ...autres] = p.identifications.map((i) => i.personne);
       const suite = autres.length > 0 ? ` et ${autres.length} autre${autres.length > 1 ? "s" : ""}` : "";
+      const type = p.format === "PDF" ? "Document" : "Photo";
       return {
         cle: `photo-${p.id}`,
         date: p.creeLe,
-        type: "Photo",
+        type,
         auteur: p.ajouteePar,
-        texte: premiere ? `Photo de ${nomComplet(premiere)}${suite}` : "Nouvelle photo",
+        texte: premiere ? `${type} de ${nomComplet(premiere)}${suite}` : type === "Document" ? "Nouveau document" : "Nouvelle photo",
         personneId: premiere?.id ?? null,
         vignette: p.fichier,
       };
@@ -97,7 +100,7 @@ async function lireFil(): Promise<Evenement[]> {
         date: i.creeLe,
         type: "Identification",
         auteur: i.ajouteePar,
-        texte: `${nomComplet(i.personne)} identifié(e) sur une photo`,
+        texte: `${nomComplet(i.personne)} identifié(e) sur ${i.photo.format === "PDF" ? "un document" : "une photo"}`,
         personneId: i.personne.id,
         vignette: i.photo.fichier,
       })),
@@ -148,9 +151,10 @@ function LigneFil({ e }: { e: Evenement }) {
 
 async function Contenu() {
   const moi = await exigerMembre();
-  const [nbPersonnes, nbPhotos, nbMembres, fil, connexions] = await Promise.all([
+  const [nbPersonnes, nbPhotos, nbDocuments, nbMembres, fil, connexions] = await Promise.all([
     prisma.personne.count(),
-    prisma.photo.count(),
+    prisma.photo.count({ where: { format: "IMAGE" } }),
+    prisma.photo.count({ where: { format: "PDF" } }),
     prisma.membre.count({ where: { statut: "ACCEPTE" } }),
     lireFil(),
     // Les connexions ne sont lues que pour un administrateur : elles n'arrivent jamais au navigateur des autres.
@@ -165,9 +169,10 @@ async function Contenu() {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Chiffre valeur={nbPersonnes} libelle={nbPersonnes > 1 ? "personnes" : "personne"} />
         <Chiffre valeur={nbPhotos} libelle={nbPhotos > 1 ? "photos" : "photo"} />
+        <Chiffre valeur={nbDocuments} libelle={nbDocuments > 1 ? "documents" : "document"} />
         <Chiffre valeur={nbMembres} libelle={nbMembres > 1 ? "membres" : "membre"} />
       </div>
 

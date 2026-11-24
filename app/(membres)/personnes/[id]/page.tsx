@@ -110,6 +110,7 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
   const photos: PhotoGalerie[] = photosBrutes.map((f) => ({
     id: f.id,
     fichier: f.fichier,
+    format: f.format,
     largeur: f.largeur,
     hauteur: f.hauteur,
     legende: f.legende,
@@ -255,7 +256,7 @@ async function Fiche({ parametres }: { parametres: Promise<{ id: string }> }) {
         <form action={supprimerPersonne} className="border-t border-black/10 pt-4">
           <input type="hidden" name="id" value={id} />
           <BoutonConfirme
-            message={`Supprimer définitivement ${sourceNom} ? ${nbLiens} lien${nbLiens > 1 ? "s" : ""} de famille ser${nbLiens > 1 ? "ont" : "a"} retiré${nbLiens > 1 ? "s" : ""}. Ses proches resteront dans l'arbre. Les photos où elle est la seule personne identifiée seront effacées. Cette action est irréversible.`}
+            message={`Supprimer définitivement ${sourceNom} ? ${nbLiens} lien${nbLiens > 1 ? "s" : ""} de famille ser${nbLiens > 1 ? "ont" : "a"} retiré${nbLiens > 1 ? "s" : ""}. Ses proches resteront dans l'arbre. Les photos et documents où elle est la seule personne identifiée seront effacés. Cette action est irréversible.`}
             className="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
           >
             Supprimer cette personne

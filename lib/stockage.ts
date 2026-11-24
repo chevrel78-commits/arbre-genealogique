@@ -13,7 +13,7 @@ const FORMATS_ACCEPTES = ["jpeg", "png", "webp"];
 
 // Noms générés ici : un identifiant aléatoire, jamais le nom d'origine ni celui de la personne.
 const IDENTIFIANT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const NOM_FICHIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-v)?\.webp$/;
+const NOM_FICHIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}((-v)?\.webp|\.pdf)$/;
 
 const dossier = () => path.resolve(process.env.STOCKAGE_MEDIAS ?? "stockage/medias", "personnes");
 
@@ -73,37 +73,90 @@ export async function enregistrerPhoto(fichier: File, recadrage?: Recadrage): Pr
   return identifiant;
 }
 
+type ImagesGalerie = { grande: { data: Buffer; info: { width: number; height: number } }; vignette: Buffer };
+
+// Grande image (cadrage d'origine) et vignette carrée, sans aucune métadonnée. La vignette d'une photo
+// est centrée sur le sujet ; celle d'un document montre le haut de la page (titre, en-tête).
+async function imagesGalerie(entree: Buffer, document: boolean): Promise<ImagesGalerie> {
+  const { format } = await sharp(entree).metadata();
+  if (!format || !FORMATS_ACCEPTES.includes(format)) throw new PhotoInvalide("Format non accepté : envoyez une image JPEG, PNG ou WebP.");
+  const [grande, vignette] = await Promise.all([
+    sharp(entree).rotate().resize({ width: COTE_GALERIE, height: COTE_GALERIE, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true }),
+    sharp(entree)
+      .rotate()
+      .resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover", position: document ? "top" : sharp.strategy.attention })
+      .webp({ quality: 80 })
+      .toBuffer(),
+  ]);
+  return { grande, vignette };
+}
+
+// Écrit les fichiers sous un nom aléatoire ; en cas d'échec, rien ne reste à moitié écrit.
+async function ecrireGalerie(images: ImagesGalerie, pdf?: Buffer) {
+  const identifiant = randomUUID();
+  await mkdir(dossier(), { recursive: true });
+  try {
+    await writeFile(path.join(dossier(), `${identifiant}.webp`), images.grande.data);
+    await writeFile(path.join(dossier(), `${identifiant}-v.webp`), images.vignette);
+    if (pdf) await writeFile(path.join(dossier(), `${identifiant}.pdf`), pdf);
+  } catch (e) {
+    await supprimerPhoto(identifiant);
+    throw e;
+  }
+  return { identifiant, largeur: images.grande.info.width, hauteur: images.grande.info.height };
+}
+
 // Photo de galerie : cadrage d'origine conservé, vignette carrée centrée sur le sujet, aucune métadonnée.
 export async function enregistrerPhotoGalerie(fichier: File): Promise<{ identifiant: string; largeur: number; hauteur: number }> {
   if (fichier.size === 0) throw new PhotoInvalide("Choisissez une photo.");
   if (fichier.size > TAILLE_PHOTO_MAX) throw new PhotoInvalide("Cette photo est trop lourde (10 Mo au plus).");
-  const entree = Buffer.from(await fichier.arrayBuffer());
-
-  let grande: { data: Buffer; info: { width: number; height: number } };
-  let vignette: Buffer;
+  let images: ImagesGalerie;
   try {
-    const { format } = await sharp(entree).metadata();
-    if (!format || !FORMATS_ACCEPTES.includes(format)) throw new PhotoInvalide("Format non accepté : envoyez une image JPEG, PNG ou WebP.");
-    [grande, vignette] = await Promise.all([
-      sharp(entree).rotate().resize({ width: COTE_GALERIE, height: COTE_GALERIE, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true }),
-      sharp(entree).rotate().resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover", position: sharp.strategy.attention }).webp({ quality: 80 }).toBuffer(),
-    ]);
+    images = await imagesGalerie(Buffer.from(await fichier.arrayBuffer()), false);
   } catch (e) {
     if (e instanceof PhotoInvalide) throw e;
     console.error("Photo de galerie non traitée :", e);
     throw new PhotoInvalide("Cette image n'a pas pu être traitée. Essayez avec une autre photo.");
   }
+  return ecrireGalerie(images);
+}
 
-  const identifiant = randomUUID();
-  await mkdir(dossier(), { recursive: true });
-  try {
-    await writeFile(path.join(dossier(), `${identifiant}.webp`), grande.data);
-    await writeFile(path.join(dossier(), `${identifiant}-v.webp`), vignette);
-  } catch (e) {
-    await supprimerPhoto(identifiant);
-    throw e;
+// Page blanche stylisée (format A4, sans texte : le serveur n'a pas forcément de polices), utilisée quand
+// le navigateur n'a pas pu dessiner la première page du PDF.
+const PAGE_GENERIQUE = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1131" height="1600" viewBox="0 0 1131 1600">
+    <rect width="1131" height="1600" fill="#f4f1ea"/>
+    <path d="M265 250h450l150 150v950H265z" fill="#fff" stroke="#b9b2a3" stroke-width="12"/>
+    <path d="M715 250v150h150" fill="#ece7dc" stroke="#b9b2a3" stroke-width="12"/>
+    <rect x="345" y="520" width="440" height="26" rx="13" fill="#d8d2c4"/>
+    <rect x="345" y="610" width="440" height="26" rx="13" fill="#d8d2c4"/>
+    <rect x="345" y="700" width="320" height="26" rx="13" fill="#d8d2c4"/>
+    <rect x="345" y="1120" width="230" height="110" rx="18" fill="#b42318"/>
+  </svg>`,
+);
+
+// Document PDF : le fichier est gardé tel quel (ses informations internes ne sont pas retirées) ; seule
+// l'image de sa première page, dessinée dans le navigateur, sert d'aperçu et de vignette.
+export async function enregistrerDocumentGalerie(pdf: File, apercu: File | null): Promise<{ identifiant: string; largeur: number; hauteur: number }> {
+  if (pdf.size === 0) throw new PhotoInvalide("Choisissez un document.");
+  if (pdf.size > TAILLE_PHOTO_MAX) throw new PhotoInvalide("Ce document est trop lourd (10 Mo au plus).");
+  const contenu = Buffer.from(await pdf.arrayBuffer());
+  // Un vrai PDF commence par « %PDF- » : le nom ou le type annoncé par le navigateur ne suffit pas.
+  if (!contenu.subarray(0, 1024).includes("%PDF-")) throw new PhotoInvalide("Ce fichier n'est pas un PDF valide.");
+
+  let images: ImagesGalerie | null = null;
+  if (apercu && apercu.size > 0 && apercu.size <= TAILLE_PHOTO_MAX) {
+    try {
+      images = await imagesGalerie(Buffer.from(await apercu.arrayBuffer()), true);
+    } catch (e) {
+      console.error("Aperçu du document non traité :", e instanceof Error ? e.message : e);
+    }
   }
-  return { identifiant, largeur: grande.info.width, hauteur: grande.info.height };
+  images ??= {
+    grande: await sharp(PAGE_GENERIQUE).webp({ quality: 85 }).toBuffer({ resolveWithObject: true }),
+    vignette: await sharp(PAGE_GENERIQUE).resize({ width: COTE_VIGNETTE, height: COTE_VIGNETTE, fit: "cover" }).webp({ quality: 80 }).toBuffer(),
+  };
+  return ecrireGalerie(images, contenu);
 }
 
 export async function lirePhoto(nom: string): Promise<Buffer | null> {
@@ -121,6 +174,6 @@ export async function lirePhoto(nom: string): Promise<Buffer | null> {
 export async function supprimerPhoto(identifiant: string | null | undefined) {
   if (!identifiant || !IDENTIFIANT.test(identifiant)) return;
   await Promise.all(
-    [`${identifiant}.webp`, `${identifiant}-v.webp`].map((nom) => unlink(path.join(dossier(), nom)).catch(() => {})),
+    [`${identifiant}.webp`, `${identifiant}-v.webp`, `${identifiant}.pdf`].map((nom) => unlink(path.join(dossier(), nom)).catch(() => {})),
   );
 }
