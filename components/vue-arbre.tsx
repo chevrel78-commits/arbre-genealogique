@@ -82,7 +82,9 @@ function TuileArbre({
   basculer: () => void;
 }) {
   const p = noeud.personne;
-  const nomComplet = `${p.prenom} ${p.nom}`;
+  // Dans l'arbre, une personne apparaît sous son nom de naissance (le nom de jeune fille s'il existe), en majuscules.
+  const nomAffiche = (p.nomJeuneFille?.trim() || p.nom).toLocaleUpperCase("fr-FR");
+  const nomComplet = `${p.prenom} ${nomAffiche}`;
   const texteRepli = `${replie ? "Déplier" : "Replier"} les ${nombreDescendants} descendant${nombreDescendants > 1 ? "s" : ""} de ${nomComplet}`;
   return (
     <div
@@ -98,12 +100,12 @@ function TuileArbre({
         draggable={false}
         className="flex min-h-0 flex-1 cursor-grab flex-col items-center gap-0.5 px-2 pt-2 hover:bg-arbre-doux/50"
       >
-        <Portrait prenom={p.prenom} nom={p.nom} photo={p.photo} petit />
+        <Portrait prenom={p.prenom} nom={nomAffiche}photo={p.photo} petit />
         <span className="w-full truncate text-sm font-medium leading-tight">
           <span className="text-xs font-normal text-foreground/60">{CIVILITES[p.civilite]} </span>
           {p.prenom}
         </span>
-        <span className="w-full truncate text-sm font-semibold leading-tight">{p.nom}</span>
+        <span className="w-full truncate text-sm font-semibold leading-tight">{nomAffiche}</span>
         {anneesDeVie(p) && <span className="text-xs leading-tight text-foreground/60">{anneesDeVie(p)}</span>}
       </Link>
       <div className="flex border-t border-black/5 text-xs">
@@ -150,6 +152,13 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
   const ignorerClic = useRef(false);
   // Quand on replie une branche, la tuile cliquée reste au même endroit de l'écran.
   const ancre = useRef<{ id: number; x: number; y: number } | null>(null);
+  // Pincement à deux doigts : le point de l'arbre placé entre les doigts reste sous les doigts.
+  const plan = useRef<HTMLDivElement>(null);
+  const zoomActuel = useRef(zoom);
+  useLayoutEffect(() => {
+    zoomActuel.current = zoom;
+  }, [zoom]);
+  const ancreZoom = useRef<{ x: number; y: number; ecranX: number; ecranY: number } | null>(null);
 
   const texteReglages = useSyncExternalStore(abonner, lireReglages, () => "");
   const reglages = useMemo(() => decoderReglages(texteReglages), [texteReglages]);
@@ -160,6 +169,14 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
   useLayoutEffect(() => {
     const zone = conteneur.current;
     if (!zone) return;
+    const az = ancreZoom.current;
+    ancreZoom.current = null;
+    if (az && plan.current) {
+      const bord = plan.current.getBoundingClientRect();
+      zone.scrollLeft += bord.left + az.x * zoom - az.ecranX;
+      zone.scrollTop += bord.top + az.y * zoom - az.ecranY;
+      return;
+    }
     const a = ancre.current;
     ancre.current = null;
     const cible = noeuds.find((n) => n.personne.id === (a?.id ?? centreId));
@@ -180,6 +197,53 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
     };
     document.addEventListener("fullscreenchange", suivre);
     return () => document.removeEventListener("fullscreenchange", suivre);
+  }, []);
+
+  // Pincer et écarter deux doigts (téléphone, tablette) : réduire ou agrandir l'arbre.
+  // Un doigt seul garde le défilement normal du navigateur.
+  useEffect(() => {
+    const zone = conteneur.current;
+    if (!zone) return;
+    let depart: { distance: number; zoom: number; x: number; y: number } | null = null;
+    const mesure = (e: TouchEvent) => {
+      const [a, b] = [e.touches[0], e.touches[1]];
+      return { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), ecranX: (a.clientX + b.clientX) / 2, ecranY: (a.clientY + b.clientY) / 2 };
+    };
+    const debut = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || !plan.current) return;
+      const m = mesure(e);
+      const bord = plan.current.getBoundingClientRect();
+      const z = zoomActuel.current;
+      depart = { distance: Math.max(m.distance, 1), zoom: z, x: (m.ecranX - bord.left) / z, y: (m.ecranY - bord.top) / z };
+    };
+    const suite = (e: TouchEvent) => {
+      if (!depart || e.touches.length !== 2) return;
+      e.preventDefault(); // ni défilement ni zoom de toute la page pendant le pincement
+      const m = mesure(e);
+      const nouveau = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, (depart.zoom * m.distance) / depart.distance));
+      if (nouveau === zoomActuel.current) return;
+      ancreZoom.current = { x: depart.x, y: depart.y, ecranX: m.ecranX, ecranY: m.ecranY };
+      setZoom(nouveau);
+    };
+    const fin = (e: TouchEvent) => {
+      if (e.touches.length < 2) depart = null;
+    };
+    // Safari (iPhone, iPad) zoome toute la page avec ses propres événements « gesture » : on les bloque ici.
+    const bloquer = (e: Event) => e.preventDefault();
+    zone.addEventListener("touchstart", debut, { passive: true });
+    zone.addEventListener("touchmove", suite, { passive: false });
+    zone.addEventListener("touchend", fin);
+    zone.addEventListener("touchcancel", fin);
+    zone.addEventListener("gesturestart", bloquer);
+    zone.addEventListener("gesturechange", bloquer);
+    return () => {
+      zone.removeEventListener("touchstart", debut);
+      zone.removeEventListener("touchmove", suite);
+      zone.removeEventListener("touchend", fin);
+      zone.removeEventListener("touchcancel", fin);
+      zone.removeEventListener("gesturestart", bloquer);
+      zone.removeEventListener("gesturechange", bloquer);
+    };
   }, []);
 
   // Le mode « toute la fenêtre » n'a pas la sortie par Échap du navigateur : on la lui donne.
@@ -329,9 +393,9 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
           e.preventDefault();
           e.stopPropagation();
         }}
-        className={`${pleinEcran ? "min-h-0 flex-1" : "h-[70vh] min-h-96"} select-none overflow-auto rounded-2xl bg-background ring-1 ring-black/10 ${enDeplacement ? "cursor-grabbing" : "cursor-grab"}`}
+        className={`${pleinEcran ? "min-h-0 flex-1" : "h-[70vh] min-h-96"} touch-pan-x touch-pan-y select-none overflow-auto rounded-2xl bg-background ring-1 ring-black/10 ${enDeplacement ? "cursor-grabbing" : "cursor-grab"}`}
       >
-        <div className="relative" style={{ width: largeur * zoom, height: hauteur * zoom, margin: "0 auto" }}>
+        <div ref={plan} className="relative" style={{ width: largeur * zoom, height: hauteur * zoom, margin: "0 auto" }}>
           <div className="absolute left-0 top-0 origin-top-left" style={{ width: largeur, height: hauteur, transform: `scale(${zoom})` }}>
             <svg width={largeur} height={hauteur} className="absolute left-0 top-0 text-arbre/60" fill="none" aria-hidden="true">
               {traits.map((t) => (
@@ -360,7 +424,7 @@ export function VueArbre({ personnes, familles, centreId }: { personnes: Personn
       </div>
       {!pleinEcran && (
         <p className="text-xs text-foreground/60">
-          Maintenir le clic et glisser : déplacer l&apos;arbre. Trait plein : couple marié et filiation. Deux petites barres : couple divorcé. Pointillés : couple non marié, ou frères et sœurs aux parents inconnus. Bouton − sur une tuile : replier ses descendants.
+          Maintenir le clic et glisser : déplacer l&apos;arbre. Sur téléphone ou tablette, pincer ou écarter deux doigts : réduire ou agrandir. Trait plein : couple marié et filiation. Deux petites barres : couple divorcé. Pointillés : couple non marié, ou frères et sœurs aux parents inconnus. Bouton − sur une tuile : replier ses descendants.
         </p>
       )}
     </div>

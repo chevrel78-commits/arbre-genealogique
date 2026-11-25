@@ -41,12 +41,17 @@ votre nom, sinon la première fiche créée. Chaque génération a sa rangée, l
 enfants en dessous. Les couples sont côte à côte, les frères et sœurs sur la même rangée avec leurs
 conjoints. Les personnes qui ne sont pas encore reliées à la famille apparaissent à droite.
 
+Sur les tuiles de l'arbre, le nom de famille est écrit en **MAJUSCULES**. Une personne qui a un **nom de
+jeune fille** apparaît sous ce nom (son nom de naissance) ; son nom d'usage reste visible sur sa fiche.
+
 - **Ouvrir une fiche** : cliquez sur la tuile.
 - **Voir tout l'arbre d'un coup** : cliquez sur **« Tout voir »**.
 - **Agrandir l'arbre** : cliquez sur **« Plein écran »**. Pour revenir, cliquez sur **« Quitter »** ou
   appuyez sur la touche Échap.
 - **Déplacer l'arbre** : maintenez le clic de la souris (le curseur devient une main) et faites glisser.
   Sur téléphone ou tablette, faites glisser avec le doigt.
+- **Zoomer sur téléphone ou tablette** : écartez deux doigts sur l'arbre pour l'agrandir, pincez-les
+  pour le réduire. Les boutons **−** et **+** font la même chose.
 - **Se déplacer dans la famille** : cliquez sur **« Centrer »** en bas d'une tuile pour amener cette
   personne au milieu de l'écran.
 - **Ne garder que les proches** : **« Parents et enfants »** n'affiche que la personne au centre, ses
